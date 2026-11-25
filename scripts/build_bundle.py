@@ -29,7 +29,7 @@ for line in lines:
     # Skip these exact lines
     if line.strip() == 'sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))':
         continue
-    elif line.strip() == 'from analysis import analyze':
+    elif line.strip().startswith('from analysis import '):
         continue
     else:
         filtered_lines.append(line)

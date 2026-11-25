@@ -836,36 +836,39 @@ def _column_warnings(headers):
     return warnings
 
 
-def analyze(text):
-    """
-    Analyze sacct output and return job analysis.
-    
-    Args:
-        text: sacct output
-        
-    Returns:
-        dict: Analysis results with jobs, skipped count, and summary statistics
-        
-    Raises:
-        ValueError: If required columns are missing from the header
-    """
+def _read_jobs(text):
+    """Parse sacct text, check the required columns and merge job steps. Returns (rows, merged jobs).
+    Raises ValueError if required columns are missing from the header."""
     rows = read_sacct(text)
-    
-    # Check for required columns
-    headers = set()
-    if rows:
-        headers = set(rows[0].keys())
-    
-    required_columns = {"JobID", "State"}
-    missing_columns = required_columns - headers
-    
+    headers = set(rows[0].keys()) if rows else set()
+    missing_columns = {"JobID", "State"} - headers
     if missing_columns:
         raise ValueError("Missing columns in sacct header: %s. Export with: %s"
                          % (", ".join(sorted(missing_columns)), EXPORT_COMMAND))
-    
-    # Merge steps
-    jobs = merge_steps(rows)
-    
+    return rows, merge_steps(rows)
+
+
+def analyze(text, user=None):
+    """Analyse sacct output: {"jobs", "skipped", "warnings", "summary"}.
+    With `user`, only that user's jobs are analysed. Raises ValueError if required columns are missing."""
+    rows, jobs = _read_jobs(text)
+    if user is not None:
+        jobs = [j for j in jobs if j.get("User", "") == user]
+    return _summarise(rows, jobs)
+
+
+def analyze_by_user(text):
+    """{user: analyze(text, user=user)} for every non-empty user, sorted by user, parsing the text only once."""
+    rows, jobs = _read_jobs(text)
+    groups = {}
+    for j in jobs:
+        if j.get("User"):
+            groups.setdefault(j["User"], []).append(j)
+    return {u: _summarise(rows, groups[u]) for u in sorted(groups)}
+
+
+def _summarise(rows, jobs):
+    """Analyse merged jobs and build the result (rows are used only for their column names)."""
     # Skip running, pending, requeued, suspended, and resizing jobs
     skipped = 0
     filtered_jobs = []

@@ -34,6 +34,7 @@ python3 clusterflow_cli.py --demo           # see what a report looks like (made
 python3 clusterflow_cli.py --days 30 --top 10
 python3 clusterflow_cli.py jobs.txt --csv report.csv
 python3 clusterflow_cli.py jobs.txt --html report.html   # one file to open, print or email
+python3 clusterflow_cli.py --all-users --split-by-user reports/   # admins: one HTML report per user
 sacct -P ... | python3 clusterflow_cli.py -
 ```
 

@@ -7,9 +7,11 @@ import json
 import csv
 import copy
 import html
+import re
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from analysis import analyze
+from analysis import analyze_by_user
 
 
 def sacct_command(days, all_users=False):
@@ -378,6 +380,23 @@ def anonymise(result):
     return out
 
 
+def write_user_reports(text, args):
+    """One HTML report per non-empty user in DIR, each covering only that user's jobs (text parsed once)."""
+    per_user = analyze_by_user(text)
+    try:
+        os.makedirs(args.split_by_user, exist_ok=True)
+        for u, result in per_user.items():
+            cost = estimate_cost(result["summary"], args.cpu_hour_cost, args.gpu_hour_cost, args.currency)
+            if cost:
+                result["cost"] = cost
+            name = re.sub(r"[^A-Za-z0-9._-]", "_", u) + ".html"
+            with open(os.path.join(args.split_by_user, name), "w", encoding="utf-8") as f:
+                f.write(html_report(result, args.top, "Report for %s" % u))
+    except OSError as e:
+        fail("cannot write per-user reports: %s" % e)
+    print("clusterflow: wrote %d per-user reports to %s" % (len(per_user), args.split_by_user), file=sys.stderr)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="clusterflow")
     parser.add_argument("file", nargs="?", default=None, help="path to a sacct export, or '-' for stdin")
@@ -387,6 +406,8 @@ def main(argv=None):
     parser.add_argument("--json", action="store_true", help="print json.dumps(result, indent=2) instead of the text report")
     parser.add_argument("--csv", help="also write a CSV report to PATH")
     parser.add_argument("--html", help="also write a self-contained HTML report to PATH (open, print or email it)")
+    parser.add_argument("--split-by-user", metavar="DIR",
+                        help="also write one HTML report per user into DIR (to send each researcher their own)")
     parser.add_argument("--anonymise", "--anonymize", action="store_true",
                         help="replace user names, job names and job IDs with neutral labels (safe to share)")
     parser.add_argument("--cpu-hour-cost", type=float, default=None,
@@ -398,6 +419,8 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
+    if args.split_by_user and args.anonymise:
+        fail("--split-by-user writes each user's own report: it cannot be combined with --anonymise")
     if args.demo and (args.file is not None or args.days is not None):
         fail("--demo uses built-in sample data: do not also give a file or --days")
     text = DEMO_SACCT if args.demo else read_input(args)
@@ -430,6 +453,8 @@ def main(argv=None):
                 f.write(html_report(result, args.top, banner))
         except OSError as e:
             fail("cannot write HTML report: %s" % e)
+    if args.split_by_user:
+        write_user_reports(text, args)
 
     return 0
 

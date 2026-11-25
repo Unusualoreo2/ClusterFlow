@@ -840,36 +840,39 @@ def _column_warnings(headers):
     return warnings
 
 
-def analyze(text):
-    """
-    Analyze sacct output and return job analysis.
-    
-    Args:
-        text: sacct output
-        
-    Returns:
-        dict: Analysis results with jobs, skipped count, and summary statistics
-        
-    Raises:
-        ValueError: If required columns are missing from the header
-    """
+def _read_jobs(text):
+    """Parse sacct text, check the required columns and merge job steps. Returns (rows, merged jobs).
+    Raises ValueError if required columns are missing from the header."""
     rows = read_sacct(text)
-    
-    # Check for required columns
-    headers = set()
-    if rows:
-        headers = set(rows[0].keys())
-    
-    required_columns = {"JobID", "State"}
-    missing_columns = required_columns - headers
-    
+    headers = set(rows[0].keys()) if rows else set()
+    missing_columns = {"JobID", "State"} - headers
     if missing_columns:
         raise ValueError("Missing columns in sacct header: %s. Export with: %s"
                          % (", ".join(sorted(missing_columns)), EXPORT_COMMAND))
-    
-    # Merge steps
-    jobs = merge_steps(rows)
-    
+    return rows, merge_steps(rows)
+
+
+def analyze(text, user=None):
+    """Analyse sacct output: {"jobs", "skipped", "warnings", "summary"}.
+    With `user`, only that user's jobs are analysed. Raises ValueError if required columns are missing."""
+    rows, jobs = _read_jobs(text)
+    if user is not None:
+        jobs = [j for j in jobs if j.get("User", "") == user]
+    return _summarise(rows, jobs)
+
+
+def analyze_by_user(text):
+    """{user: analyze(text, user=user)} for every non-empty user, sorted by user, parsing the text only once."""
+    rows, jobs = _read_jobs(text)
+    groups = {}
+    for j in jobs:
+        if j.get("User"):
+            groups.setdefault(j["User"], []).append(j)
+    return {u: _summarise(rows, groups[u]) for u in sorted(groups)}
+
+
+def _summarise(rows, jobs):
+    """Analyse merged jobs and build the result (rows are used only for their column names)."""
     # Skip running, pending, requeued, suspended, and resizing jobs
     skipped = 0
     filtered_jobs = []
@@ -974,6 +977,7 @@ import json
 import csv
 import copy
 import html
+import re
 
 
 
@@ -1343,6 +1347,23 @@ def anonymise(result):
     return out
 
 
+def write_user_reports(text, args):
+    """One HTML report per non-empty user in DIR, each covering only that user's jobs (text parsed once)."""
+    per_user = analyze_by_user(text)
+    try:
+        os.makedirs(args.split_by_user, exist_ok=True)
+        for u, result in per_user.items():
+            cost = estimate_cost(result["summary"], args.cpu_hour_cost, args.gpu_hour_cost, args.currency)
+            if cost:
+                result["cost"] = cost
+            name = re.sub(r"[^A-Za-z0-9._-]", "_", u) + ".html"
+            with open(os.path.join(args.split_by_user, name), "w", encoding="utf-8") as f:
+                f.write(html_report(result, args.top, "Report for %s" % u))
+    except OSError as e:
+        fail("cannot write per-user reports: %s" % e)
+    print("clusterflow: wrote %d per-user reports to %s" % (len(per_user), args.split_by_user), file=sys.stderr)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="clusterflow")
     parser.add_argument("file", nargs="?", default=None, help="path to a sacct export, or '-' for stdin")
@@ -1352,6 +1373,8 @@ def main(argv=None):
     parser.add_argument("--json", action="store_true", help="print json.dumps(result, indent=2) instead of the text report")
     parser.add_argument("--csv", help="also write a CSV report to PATH")
     parser.add_argument("--html", help="also write a self-contained HTML report to PATH (open, print or email it)")
+    parser.add_argument("--split-by-user", metavar="DIR",
+                        help="also write one HTML report per user into DIR (to send each researcher their own)")
     parser.add_argument("--anonymise", "--anonymize", action="store_true",
                         help="replace user names, job names and job IDs with neutral labels (safe to share)")
     parser.add_argument("--cpu-hour-cost", type=float, default=None,
@@ -1363,6 +1386,8 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
+    if args.split_by_user and args.anonymise:
+        fail("--split-by-user writes each user's own report: it cannot be combined with --anonymise")
     if args.demo and (args.file is not None or args.days is not None):
         fail("--demo uses built-in sample data: do not also give a file or --days")
     text = DEMO_SACCT if args.demo else read_input(args)
@@ -1395,6 +1420,8 @@ def main(argv=None):
                 f.write(html_report(result, args.top, banner))
         except OSError as e:
             fail("cannot write HTML report: %s" % e)
+    if args.split_by_user:
+        write_user_reports(text, args)
 
     return 0
 

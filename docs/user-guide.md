@@ -87,6 +87,10 @@ python3 dist/clusterflow.py jobs.txt --html report.html
 python3 dist/clusterflow.py jobs.txt --anonymise --html report.html   # safe to share outside your group
 ```
 
+## For HPC teams: one report per user
+
+Run with `--all-users --split-by-user reports/` to write one HTML report per user into `reports/` (for example `reports/amurphy.html`). Each file covers only that user's jobs, so you can send every researcher their own report.
+
 ## Try it first: `--demo`
 
 To see what a full report looks like before using your own jobs, run:
