@@ -27,6 +27,12 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - Bugs caught in review and fixed: a formula printed instead of a number in the out-of-memory advice, all efficiency bars showing red, a malformed CSV export with duplicate downloads, inverted advice in the user guide, and a wrong export command (`-X` hides memory data).
 - An unverifiable statistic ("60%+ of HPC jobs underutilised, NVIDIA survey") was removed from the README and the company plan.
 
+## v0.3 (same day)
+
+- **Ready for real exports:** new tests cover array jobs, `.extern` steps, memory in KB, heterogeneous jobs, Windows line endings and failed jobs. Three bugs were found and fixed: a crash on repeated header lines, `--time=00:00:00` advice for jobs that never started, and requeued or suspended jobs being analysed as finished.
+- **Per-user and per-partition summaries:** jobs, average efficiencies and wasted core-hours per user and per partition, sorted by waste, shown as two tables in the web app. Review caught an averaging bug (dividing by all jobs instead of jobs with a value) before it was committed.
+- 65 automated tests, all passing.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.

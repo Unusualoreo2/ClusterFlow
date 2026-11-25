@@ -20,7 +20,7 @@ HPCFlow v0.2 is a **Slurm job efficiency analyser**. It answers the question eve
 The user exports their jobs with:
 
 ```
-sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
+sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
 ```
 
 `-P` gives `|`-separated output. Comma-separated files (`--delimiter=,`) are also accepted. The delimiter is detected from the header line.
@@ -43,6 +43,12 @@ Do **not** add `-X` (allocations only): `MaxRSS` is recorded on the job steps, s
 - Time used < 25% → suggest a time limit of `Elapsed * 1.5`, rounded up to the next 15 minutes.
 - State `OUT_OF_MEMORY` / `TIMEOUT` → say so and suggest more memory / more time.
 - Jobs that are still running (`RUNNING`, `PENDING`) are skipped.
+
+## Group summaries (v0.3)
+
+When the header has `User` / `Partition`, `summary.by_user` / `summary.by_partition` list one entry per value (`(unknown)` if blank) with `job_count`, `avg_cpu_efficiency`, `avg_memory_efficiency` (averages over jobs that have a value) and `wasted_core_hours`, sorted by wasted core-hours descending. Otherwise both lists are empty.
+
+Jobs in states RUNNING, PENDING, REQUEUED, SUSPENDED and RESIZING are skipped. Repeated header lines (joined exports) are ignored.
 
 ## Components
 

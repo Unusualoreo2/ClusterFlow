@@ -157,6 +157,16 @@
             display: none;
         }
 
+        .groups-table {
+            width: auto;
+            min-width: 50%;
+            margin-bottom: 24px;
+        }
+
+        .groups-table td:nth-child(n+2), .groups-table th:nth-child(n+2) {
+            text-align: right;
+        }
+
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -282,7 +292,7 @@
 
     <div class="box command-box">
         <h2>Export your jobs</h2>
-        <pre>sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt</pre>
+        <pre>sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt</pre>
         <button class="copy-btn">Copy</button>
     </div>
 
@@ -323,6 +333,8 @@
             </div>
         </div>
 
+        <div id="groupsSection"></div>
+
         <table id="resultsTable">
             <thead>
             <tr>
@@ -358,11 +370,12 @@
         const memoryEfficiencyValue = document.getElementById('memoryEfficiencyValue');
         const wastedHoursValue = document.getElementById('wastedHoursValue');
         const downloadBtn = document.getElementById('downloadBtn');
+        const groupsSection = document.getElementById('groupsSection');
         const copyBtn = document.querySelector('.copy-btn');
 
         // Copy command to clipboard
         copyBtn.addEventListener('click', function () {
-            const command = 'sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt';
+            const command = 'sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt';
             navigator.clipboard.writeText(command).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = 'Copied';
@@ -489,6 +502,34 @@
             return '"' + s.replace(/"/g, '""') + '"';
         }
 
+        // Small table of grouped results (only shown when the list is not empty)
+        function renderGroups(title, label, groups) {
+            if (!groups.length) return;
+            const heading = document.createElement('h3');
+            heading.textContent = title;
+            groupsSection.appendChild(heading);
+            const table = document.createElement('table');
+            table.className = 'groups-table';
+            const head = table.createTHead().insertRow();
+            [label, 'Jobs', 'Avg CPU %', 'Avg memory %', 'Wasted core-h'].forEach(t => {
+                const th = document.createElement('th');
+                th.textContent = t;
+                head.appendChild(th);
+            });
+            const body = table.createTBody();
+            groups.forEach(g => {
+                const row = body.insertRow();
+                const pct = v => (v === null || v === undefined) ? '–' : Math.round(v) + '%';
+                [g.name, g.job_count, pct(g.avg_cpu_efficiency), pct(g.avg_memory_efficiency),
+                 g.wasted_core_hours.toFixed(1)].forEach(v => {
+                    row.insertCell().textContent = String(v);
+                });
+                row.cells[2].style.color = effColor(g.avg_cpu_efficiency);
+                row.cells[3].style.color = effColor(g.avg_memory_efficiency);
+            });
+            groupsSection.appendChild(table);
+        }
+
         // Display results
         function displayResults(data) {
             // Clear previous error messages
@@ -505,6 +546,11 @@
             cpuEfficiencyValue.textContent = data.summary.avg_cpu_efficiency !== null ? Math.round(data.summary.avg_cpu_efficiency) + '%' : '–';
             memoryEfficiencyValue.textContent = data.summary.avg_memory_efficiency !== null ? Math.round(data.summary.avg_memory_efficiency) + '%' : '–';
             wastedHoursValue.textContent = data.summary.total_wasted_core_hours !== null ? data.summary.total_wasted_core_hours.toFixed(1) : '–';
+
+            // Per-user / per-partition tables
+            groupsSection.textContent = '';
+            renderGroups('By user', 'User', data.summary.by_user || []);
+            renderGroups('By partition', 'Partition', data.summary.by_partition || []);
 
             // Clear table body
             tableBody.innerHTML = '';

@@ -6,7 +6,7 @@ As an HPC user, you can improve your job efficiency by analyzing sacct exports.
 
 Run this command to export your jobs:
 ```
-sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
+sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
 ```
 
 Do not add `-X`: memory usage is recorded on the job steps, and HPCFlow merges them into each job automatically. Change `now-7days` to cover a different period.
@@ -28,6 +28,10 @@ Colours of the CPU and memory bars:
 - < 50%: red
 - 50-79%: amber
 - >= 80%: green
+
+## By user and by partition
+
+If your export includes the User and Partition columns, HPCFlow also shows two small tables: one row per user and one row per partition, with the number of jobs, average CPU and memory efficiency, and wasted core-hours. The rows with the most wasted core-hours come first, so you can see where resources are lost.
 
 ## Recommendations
 
