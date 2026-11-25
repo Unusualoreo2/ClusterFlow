@@ -506,6 +506,7 @@ def summarize_groups(results, key):
                 "avg_memory_efficiency": None,
                 "wasted_core_hours": 0.0,
                 "avg_wait_s": None,
+                "gpu_hours": None,
                 "_cpu_n": 0,
                 "_mem_n": 0,
                 "_wait_n": 0
@@ -535,6 +536,9 @@ def summarize_groups(results, key):
             else:
                 group["avg_memory_efficiency"] += mem_eff
             group["_mem_n"] += 1
+
+        if job.get("gpu_hours") is not None:
+            group["gpu_hours"] = (group["gpu_hours"] or 0) + job["gpu_hours"]
 
         wait_s = job.get("wait_s")
         if wait_s is not None:
@@ -776,6 +780,12 @@ def analyze(text):
     if memory_efficiencies:
         avg_memory_efficiency = sum(memory_efficiencies) / len(memory_efficiencies)
 
+    gpu_jobs = [j for j in analyzed_jobs if j["alloc_gpus"]]
+    gpu_hours = [j["gpu_hours"] for j in gpu_jobs if j["gpu_hours"] is not None]
+    gpu_utils = [j["gpu_utilization"] for j in gpu_jobs if j["gpu_utilization"] is not None]
+    total_gpu_hours = sum(gpu_hours) if gpu_hours else None
+    avg_gpu_utilization = sum(gpu_utils) / len(gpu_utils) if gpu_utils else None
+
     waits = [j["wait_s"] for j in analyzed_jobs if j["wait_s"] is not None]
     avg_wait_s = sum(waits) / len(waits) if waits else None
     max_wait_s = max(waits) if waits else None
@@ -798,7 +808,9 @@ def analyze(text):
     return {
         "jobs": analyzed_jobs,
         "skipped": skipped,
-        "warnings": _column_warnings(headers),
+        "warnings": _column_warnings(headers) + (
+            ["TRESUsageInAve column missing: GPU utilisation is not available."]
+            if gpu_jobs and "TRESUsageInAve" not in headers else []),
         "summary": {
             "job_count": job_count,
             "avg_cpu_efficiency": avg_cpu_efficiency,
@@ -806,6 +818,9 @@ def analyze(text):
             "total_wasted_core_hours": total_wasted_core_hours,
             "avg_wait_s": avg_wait_s,
             "max_wait_s": max_wait_s,
+            "gpu_job_count": len(gpu_jobs),
+            "total_gpu_hours": total_gpu_hours,
+            "avg_gpu_utilization": avg_gpu_utilization,
             "arrays": summarize_arrays(analyzed_jobs),
             "by_user": by_user,
             "by_partition": by_partition
