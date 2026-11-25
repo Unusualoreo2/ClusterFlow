@@ -489,6 +489,9 @@ def analyze_job(job):
     if elapsed_s is not None and elapsed_s > 0:
         if total_cpu_s is not None:
             cpu_efficiency = (total_cpu_s / (elapsed_s * alloc_cpus)) * 100 if alloc_cpus > 0 else None
+            if cpu_efficiency is not None and cpu_efficiency > 150:
+                cpu_efficiency = None  # accounting artefact (short jobs can report more CPU time than allocated)
+                job["_cpu_artefact"] = True
         
         if req_mem_mb is not None and req_mem_mb > 0:
             memory_efficiency = (max_rss_mb / req_mem_mb) * 100 if max_rss_mb is not None else None
@@ -795,6 +798,16 @@ def summarize_arrays(results):
     return entries
 
 
+def _artefact_warning(jobs):
+    """Note about jobs whose CPU time exceeded their allocation (their CPU efficiency is ignored)."""
+    n = sum(1 for j in jobs if j.get("_cpu_artefact"))
+    if not n:
+        return []
+    return ["%d %s reported more CPU time than %s allocated (a Slurm accounting artefact); "
+            "%s CPU efficiency is ignored." % (n, "job" if n == 1 else "jobs", "it was" if n == 1 else "they were",
+                                              "its" if n == 1 else "their")]
+
+
 def _column_warnings(headers):
     """Plain-English notes about columns the export lacks, so the user knows which figures are unavailable."""
     def has(*cols):
@@ -920,7 +933,7 @@ def analyze(text):
         "skipped": skipped,
         "warnings": _column_warnings(headers) + (
             ["TRESUsageInAve column missing: GPU utilisation is not available."]
-            if gpu_jobs and "TRESUsageInAve" not in headers else []),
+            if gpu_jobs and "TRESUsageInAve" not in headers else []) + _artefact_warning(filtered_jobs),
         "summary": {
             "job_count": job_count,
             "avg_cpu_efficiency": avg_cpu_efficiency,
