@@ -25,11 +25,11 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | Item | State |
 |---|---|
 | Version | ~v0.13, **631 tests, all passing** |
-| Repository | `C:\Users\Owner\Documents\Computer Science\HPCFlow\MVP` (folder name not yet renamed) |
-| Backup | Private GitHub repo `Unusualoreo2/HPCFlow` (repo name not yet renamed); **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
+| Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` |
+| Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
 | Live cluster | **Never run on one yet** |
-| Rename | Complete in code, docs, file names and output; folder and GitHub repo names still say HPCFlow |
+| Rename | Complete everywhere: code, docs, output, local folder and GitHub repo (25 Nov 2026) |
 
 ## 3. How the work is done (the user's rules)
 
@@ -70,7 +70,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 1. **GitHub `workflow` permission:** run `gh auth refresh -h github.com -s workflow` and approve the device code; then move `tools/ci/tests.yml` to `.github/workflows/` (steps in `tools/ci/README.md`). Never commit it there before approval, or every auto-push is rejected.
 2. **Kelvin2 (QUB) access:** requested (up to 8 cores / 8 GB per job, <20 core-hours). When granted, follow `docs/pilot-guide.md` (about 15 minutes, 2.5 core-hours).
 3. **COSMA: ignore** (user's instruction). No SSH keys exist on this PC.
-4. Optional: rename the folder and the GitHub repo to ClusterFlow (repo rename: `gh repo rename ClusterFlow`; then update `origin`).
+4. Delete the old `Computer Science\HPCFlow` folder once nothing uses it (the project now lives in `Computer Science\ClusterFlow`).
 
 ## 7. Open items and next candidates
 

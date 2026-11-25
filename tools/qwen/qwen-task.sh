@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run one Qwen task against the HPCFlow project, then verify.
+# Run one Qwen task against the ClusterFlow project, then verify.
 # Success = the whole test suite passes AND the task's own check command (if given) succeeds.
 # On failure, Qwen's edits outside tests/ and data/ are rolled back to the last commit and the task is
 # retried once, so a retry never stacks on a half-finished attempt. Commit specs/tests BEFORE calling this.
