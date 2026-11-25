@@ -13,6 +13,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 - Queue wait; summaries per user, per partition, per job array, and by day or week.
 - Cost of waste at the centre's own rates (`--cpu-hour-cost`, `--gpu-hour-cost`); it never invents prices.
 - Exact advice: `--cpus-per-task`, `--mem`, `--time`, `--gpus`; out-of-memory and timeout jobs flagged.
+- **HTML report:** `--html report.html` for one file to open, print or email.
 - **Typical-job advice:** for jobs a user runs 3+ times, sized from near-worst runs (p90 CPU, p95 memory and time).
 - "What to fix first" headline; `--anonymise` for shareable reports; plain-English notes when columns are missing.
 
@@ -24,7 +25,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.14, **663 tests, all passing** |
+| Version | v0.15, **678 tests, all passing** |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -58,6 +59,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.12 | Published-dataset format; **full IN2P3 Dec 2024 month: 2.37M real jobs in ~72 s**; readable CLI report ("What to fix first"); typical-job advice |
 | v0.13 | Impossible CPU efficiency (Slurm accounting artefact on very short jobs) ignored with a note; project renamed ClusterFlow |
 | v0.14 | One-command demo: `clusterflow --demo` (built-in made-up sample showing every finding; also the web page's demo button); fixed `--anonymise` leaking names in typical-job advice |
+| v0.15 | `--html report.html` for one file to open, print or email; bundle checked on Python 3.15 |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
