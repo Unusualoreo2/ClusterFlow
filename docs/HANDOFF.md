@@ -25,7 +25,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.16, **695 tests, all passing** |
+| Version | v0.17, **707 tests, all passing** |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -39,6 +39,8 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 - **Hand a task to Qwen:** write a task file, then `bash tools/qwen/qwen-task.sh <task.md> [max_tokens] [check-command]`. It runs Qwen with file tools limited to the project, then checks all tests plus the task's own check; on failure it rolls back and retries once. See `tools/qwen/README.md`.
 - **Commit only with** `bash tools/safe-commit.sh "message"`: it rebuilds the bundle and refuses to commit unless every test passes.
 - **Qwen limits:** its context is 32k tokens, so tell it exactly which lines to read and give ready-made code blocks; keep task files outside the repo (the scratchpad), not in `tools/`.
+- **Qwen's second attempt starts from a rollback:** if attempt 1 got close, review its diff before letting attempt 2 run; attempt 2 may rewrite good code. Changing `from analysis import ...` in the CLI needs `scripts/build_bundle.py` to keep stripping it.
+
 - **Qwen tips learned:** give exact `replace_text` snippets with unique anchors; for doc edits, make the new text end with the original heading (Qwen tends to delete headings); always review its diff (it sometimes invents field names, duplicates code or picks a simpler design); keep each task small.
 
 ## 4. What was built (25 Nov 2026, chronological)
@@ -61,6 +63,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.14 | One-command demo: `clusterflow --demo` (built-in made-up sample showing every finding; also the web page's demo button); fixed `--anonymise` leaking names in typical-job advice |
 | v0.15 | `--html report.html` for one file to open, print or email; bundle checked on Python 3.15 |
 | v0.16 | Paste-ready `#SBATCH` lines for typical jobs (CLI, HTML, web); bundle tested on real Python 3.6.8 and 3.8.10 (`tests/test_real_old_python.py`, embeddable builds in `%LOCALAPPDATA%\Programs\python-embed`) |
+| v0.17 | --split-by-user DIR: one HTML report per user for HPC teams; `analysis.analyze_by_user` parses once (200 users / 20k jobs: 1.4 s, was 28 s) |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
