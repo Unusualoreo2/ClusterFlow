@@ -81,6 +81,12 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - Not verified: GPU utilisation on a real cluster (needs GPU accounting enabled).
 - 594 automated tests, all passing; backed up to GitHub automatically.
 
+## v0.10: usage trend over time
+
+- **Trend table** in the engine, CLI and web app: jobs grouped by start day (exports of 14 days or less) or by week, with efficiency, wasted core-hours, GPU-hours and queue wait per period, oldest first.
+- **Workflow:** Qwen built the engine part first try and the display in one run; Claude corrected a one-space indentation slip and made the edit tool align replacements properly.
+- 602 automated tests, all passing; backed up to GitHub automatically.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.

@@ -45,6 +45,10 @@ The "Avg queue wait" card and the "Queue wait" column show how long jobs waited 
 
 If you used GPUs, the "GPU-hours" card shows how many GPU-hours your jobs held and, when your cluster records it, how busy the GPUs were on average. A job that kept GPUs mostly idle gets advice such as "request --gpus=1 instead". GPUs are usually the most expensive resource on a cluster, so this is often the biggest saving.
 
+## Trend over time
+
+If your export covers more than one day, a "Trend by day" (or, for longer periods, "Trend by week") table shows whether efficiency and waste are improving. Export a longer period, for example with `-S now-30days`, to see weekly trends.
+
 ## Recommendations
 
 HPCFlow suggests how to improve your next job:

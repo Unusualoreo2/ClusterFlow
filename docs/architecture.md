@@ -62,6 +62,10 @@ Tested against public `sacct` captures from real clusters. HPCFlow reads `|`, co
 
 GPUs come from `AllocTRES` (or `ReqTRES`): `gres/gpu=N`, or typed `gres/gpu:<type>=N` (if both appear, the untyped total counts). `gpu_hours = GPUs x Elapsed`. Utilisation is the highest `gres/gpuutil` in `TRESUsageInAve` across the job and its steps; it exists only where the cluster has GPU accounting enabled, otherwise a note says it is unavailable. Advice (completed jobs only): under 50% busy on several GPUs, suggest `--gpus=ceil(GPUs x util x 1.2)`; under 30% on one GPU, ask whether the job really uses the GPU. Summary: `gpu_job_count`, `total_gpu_hours`, `avg_gpu_utilization`; groups: `gpu_hours`.
 
+## Usage trend (v0.10)
+
+`summary.trend = {"period": "day" | "week" | null, "rows": [...]}`. Jobs are dated by `Start` (falling back to `Submit`); exports spanning 14 days or less are grouped by day, longer ones by week (named after its Monday). Rows have the same fields as the per-user groups and are sorted oldest first. The CLI and web app show the trend only when there are at least two periods.
+
 ## Components
 
 - `backend/analysis.py`: pure Python standard library, no pandas. Parsing, metrics and recommendations. Fully unit-tested.
