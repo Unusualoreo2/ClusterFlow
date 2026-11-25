@@ -355,6 +355,10 @@
                 <div class="card-value" id="waitValue">–</div>
                 <div class="card-label">Avg queue wait</div>
             </div>
+            <div class="card" id="gpuCard" style="display:none">
+                <div class="card-value" id="gpuValue">–</div>
+                <div class="card-label" id="gpuLabel">GPU-hours</div>
+            </div>
         </div>
 
         <div id="warningsBox" class="warnings-box" style="display:none"></div>
@@ -643,6 +647,15 @@
             const hasWait = data.summary.avg_wait_s !== null && data.summary.avg_wait_s !== undefined;
             document.getElementById('waitCard').style.display = hasWait ? '' : 'none';
             document.getElementById('waitValue').textContent = fmtWait(data.summary.avg_wait_s);
+
+            // GPU card (only when the export contains GPU jobs)
+            const gpuJobs = data.summary.gpu_job_count || 0;
+            document.getElementById('gpuCard').style.display = gpuJobs ? '' : 'none';
+            const gpuHours = data.summary.total_gpu_hours;
+            document.getElementById('gpuValue').textContent = (gpuHours === null || gpuHours === undefined) ? '–' : gpuHours.toFixed(1);
+            const gpuUtil = data.summary.avg_gpu_utilization;
+            document.getElementById('gpuLabel').textContent = 'GPU-hours (' + gpuJobs + ' GPU job' + (gpuJobs === 1 ? '' : 's')
+                + (gpuUtil === null || gpuUtil === undefined ? '' : ', avg ' + Math.round(gpuUtil) + '% busy') + ')';
 
             // Per-user / per-partition tables
             groupsSection.textContent = '';

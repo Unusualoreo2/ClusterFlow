@@ -66,7 +66,24 @@ const tools = {
       const f = safe(p); const src = (await fs.readFile(f, "utf8")).replace(/\r\n/g, "\n");
       const unprefix = t => t.replace(/\r\n/g, "\n").replace(/^ *\d+\| /gm, "");
       if (src.split(old_text).length === 1) { old_text = unprefix(old_text); new_text = unprefix(new_text); }
-      const n = src.split(old_text).length - 1;
+      let n = src.split(old_text).length - 1;
+      if (n === 0) {
+        // Qwen often drops leading indentation when copying: match line by line ignoring it,
+        // then shift the replacement by the indentation difference of the first line.
+        const lines = src.split("\n"), want = old_text.replace(/\n+$/, "").split("\n").map(l => l.trim());
+        const hits = [];
+        for (let i = 0; i + want.length <= lines.length; i++)
+          if (want.every((w, k) => lines[i + k].trim() === w)) hits.push(i);
+        if (hits.length === 1) {
+          const i = hits[0], have = lines[i].match(/^\s*/)[0], gave = old_text.match(/^[ \t]*/)[0];
+          const extra = have.length > gave.length ? have.slice(gave.length) : "";
+          const repl = new_text.replace(/\n+$/, "").split("\n").map(l => (l.trim() ? extra + l : l));
+          lines.splice(i, want.length, ...repl);
+          await fs.writeFile(f, lines.join("\n"), "utf8");
+          return `Replaced text in ${p} (matched ignoring indentation)`;
+        }
+        n = hits.length;
+      }
       if (n !== 1) return `Error: old_text found ${n} times (must be exactly 1). Read the file again and copy the text exactly.`;
       await fs.writeFile(f, src.replace(old_text, () => new_text), "utf8"); return `Replaced text in ${p}`;
     },
