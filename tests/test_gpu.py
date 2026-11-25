@@ -95,3 +95,17 @@ def test_gpu_per_user_group():
     text = HDR + gpu_job(10, user="ann") + gpu_job(11, user="bob", gpus="gres/gpu=1", el="01:00:00")
     by_user = {g["name"]: g for g in a.analyze(text)["summary"]["by_user"]}
     assert by_user["ann"]["gpu_hours"] == pytest.approx(4.0) and by_user["bob"]["gpu_hours"] == pytest.approx(1.0)
+
+
+def test_cli_shows_gpu_lines(tmp_path):
+    import subprocess
+    cli = os.path.join(os.path.dirname(__file__), "..", "backend", "hpcflow_cli.py")
+    f = tmp_path / "g.txt"
+    f.write_text(HDR + gpu_job(10, gpus="gres/gpu=4", util="gres/gpuutil=20"), encoding="utf-8")
+    out = subprocess.run([sys.executable, cli, str(f)], stdout=subprocess.PIPE, universal_newlines=True, timeout=60).stdout
+    assert "GPU jobs:              1" in out and "GPU-hours:             8.0" in out and "Avg GPU utilisation:   20%" in out
+    assert "--gpus=1" in out
+    cpu = tmp_path / "c.txt"
+    cpu.write_text("JobID|State|Elapsed|AllocCPUS|TotalCPU\n1|COMPLETED|01:00:00|1|01:00:00\n", encoding="utf-8")
+    assert "GPU" not in subprocess.run([sys.executable, cli, str(cpu)], stdout=subprocess.PIPE,
+                                       universal_newlines=True, timeout=60).stdout
