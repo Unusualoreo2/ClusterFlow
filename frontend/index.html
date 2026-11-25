@@ -651,6 +651,11 @@
                 const inner = document.createElement('ul');
                 p.recommendations.forEach(t => { const r = document.createElement('li'); r.textContent = t; inner.appendChild(r); });
                 li.appendChild(inner);
+                if (p.sbatch && p.sbatch.length) {
+                    const pre = document.createElement('pre');
+                    pre.textContent = p.sbatch.join('\n');
+                    li.appendChild(pre);
+                }
                 ul.appendChild(li);
             });
             groupsSection.appendChild(ul);

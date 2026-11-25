@@ -367,6 +367,13 @@ def _hms(seconds):
     return "%02d:%02d:%02d" % (seconds // 3600, (seconds % 3600) // 60, seconds % 60)
 
 
+def _slurm_time(seconds):
+    """Slurm --time value: HH:MM:SS, or D-HH:MM:SS from one day up."""
+    seconds = int(seconds)
+    days, rest = divmod(seconds, 86400)
+    return ("%d-%s" % (days, _hms(rest))) if days else _hms(rest)
+
+
 def summarize_profiles(results, min_runs=3):
     """Advice per (user, job name) from >= min_runs COMPLETED runs, sized to near-worst runs:
     p90 busy cores x 1.2, p95 peak memory x 1.2, p95 run time x 1.5 (rounded up to 15 min).
@@ -396,15 +403,19 @@ def summarize_profiles(results, min_runs=3):
         time_need = int(ceil(p_el * 1.5 / 900.0)) * 900 if p_el is not None else None
         time_req = percentile(limits, 50)
         recs = []
+        sbatch = []
         if cpus_need is not None and cpus_req and cpus_need < cpus_req:
             recs.append("Across %d runs, at most %.1f cores were busy in 90%% of runs: request --cpus-per-task=%d "
                         "instead of %d." % (n, p_cores, cpus_need, cpus_req))
+            sbatch.append("#SBATCH --cpus-per-task=%d" % cpus_need)
         if mem_need is not None and mem_req is not None and mem_req - mem_need >= 1024:
             recs.append("Across %d runs, peak memory was at most %dM in 95%% of runs: request --mem=%dM instead of "
                         "%dM." % (n, round(p_rss), mem_need, round(mem_req)))
+            sbatch.append("#SBATCH --mem=%dM" % mem_need)
         if time_need is not None and time_req is not None and time_need < 0.5 * time_req:
             recs.append("Across %d runs, 95%% finished within %s: request --time=%s instead of %s."
-                        % (n, _hms(p_el), _hms(time_need), _hms(time_req)))
+                        % (n, _hms(p_el), _slurm_time(time_need), _hms(time_req)))
+            sbatch.append("#SBATCH --time=%s" % _slurm_time(time_need))
         profiles.append({
             "user": user, "name": name, "runs": n,
             "cpus_requested": cpus_req, "cpus_needed": cpus_need,
@@ -412,6 +423,7 @@ def summarize_profiles(results, min_runs=3):
             "time_requested_s": time_req, "time_needed_s": time_need,
             "wasted_core_hours": sum(r["wasted_core_hours"] or 0 for r in runs),
             "recommendations": recs,
+            "sbatch": sbatch,
         })
     profiles.sort(key=lambda p: (-p["wasted_core_hours"], p["user"], p["name"]))
     return profiles

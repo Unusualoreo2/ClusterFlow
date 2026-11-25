@@ -193,6 +193,10 @@ def report(result, top):
             lines.append("  %s / %s (%d runs)" % (p["user"] or "-", p["name"], p["runs"]))
             for rec in p["recommendations"]:
                 lines.append("    - " + rec)
+            if p.get("sbatch"):
+                lines.append("    Paste into your job script:")
+                for s in p["sbatch"]:
+                    lines.append("      " + s)
         lines.append("")
     arrays = summary.get("arrays", [])
     if arrays:
