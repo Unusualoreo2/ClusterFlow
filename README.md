@@ -66,7 +66,7 @@ The web app has a "Price the waste" box for the same. Wasted CPU time = allocate
 - `GET /` serves the frontend
 - `POST /api/analyze` accepts a sacct file upload and returns JSON
 - `POST /api/analyze-text` accepts sacct text in a JSON body and returns JSON
-- `GET /api/example` returns an example sacct export
+- `GET /api/example` returns the built-in demo sample (the same data as `--demo`)
 - `GET /api/health` returns a health check
 
 ## What it measures

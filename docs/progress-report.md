@@ -110,4 +110,4 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 powershell -ExecutionPolicy Bypass -File scripts\run.ps1
 ```
 
-Then open http://127.0.0.1:8000 and click "Try example data".
+Then open http://127.0.0.1:8000 and click "Try the demo (made-up data)".

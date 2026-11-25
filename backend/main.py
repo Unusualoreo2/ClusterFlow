@@ -2,11 +2,11 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
 from pathlib import Path
 from analysis import analyze
+from clusterflow_cli import DEMO_SACCT
 from pydantic import BaseModel
 
 # Constants
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
-EXAMPLE = Path(__file__).resolve().parent.parent / "data" / "example_sacct.txt"
 MAX_BYTES = 10 * 1024 * 1024
 
 # Create FastAPI app
@@ -18,7 +18,7 @@ async def health():
 
 @app.get("/api/example")
 async def example():
-    return PlainTextResponse(EXAMPLE.read_text(encoding="utf-8"))
+    return PlainTextResponse(DEMO_SACCT)
 
 @app.get("/")
 async def read_root():
