@@ -53,6 +53,10 @@ If your export covers more than one day, a "Trend by day" (or, for longer period
 
 Enter your centre's price per core-hour (and per GPU-hour) in the "Price the waste" box, or use `--cpu-hour-cost` / `--gpu-hour-cost` on the command line. Ask your HPC team for the rates they charge or budget with; HPCFlow does not assume any.
 
+## Typical jobs
+
+When you run the same job (same job name) at least three times, HPCFlow also sizes it from all those runs together, using the near-worst runs (90th percentile of CPU use, 95th percentile of memory and run time) plus a safety margin. This is safer than advice from a single run, which might have been unusually small.
+
 ## Recommendations
 
 HPCFlow suggests how to improve your next job:

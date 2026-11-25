@@ -635,6 +635,27 @@
             section.appendChild(table);
         }
 
+        // Typical jobs: advice from repeated runs (built with textContent only)
+        function renderProfiles(profiles) {
+            const withAdvice = profiles.filter(p => p.recommendations.length).slice(0, 20);
+            if (!withAdvice.length) return;
+            const heading = document.createElement('h3');
+            heading.textContent = 'Typical jobs (sized from repeated runs)';
+            groupsSection.appendChild(heading);
+            const ul = document.createElement('ul');
+            withAdvice.forEach(p => {
+                const li = document.createElement('li');
+                const title = document.createElement('strong');
+                title.textContent = (p.user || '-') + ' / ' + p.name + ' (' + p.runs + ' runs)';
+                li.appendChild(title);
+                const inner = document.createElement('ul');
+                p.recommendations.forEach(t => { const r = document.createElement('li'); r.textContent = t; inner.appendChild(r); });
+                li.appendChild(inner);
+                ul.appendChild(li);
+            });
+            groupsSection.appendChild(ul);
+        }
+
         function renderGroups(title, label, groups) {
             if (!groups.length) return;
             const heading = document.createElement('h3');
@@ -722,6 +743,7 @@
                              trend.period === 'day' ? 'Day' : 'Week of', trend.rows);
             }
             renderArrays(data.summary.arrays || []);
+            renderProfiles(data.summary.profiles || []);
 
             // Show at most MAX_ROWS jobs, most wasteful first (the CSV download still has all jobs)
             const MAX_ROWS = 200;

@@ -66,6 +66,10 @@ GPUs come from `AllocTRES` (or `ReqTRES`): `gres/gpu=N`, or typed `gres/gpu:<typ
 
 `summary.trend = {"period": "day" | "week" | null, "rows": [...]}`. Jobs are dated by `Start` (falling back to `Submit`); exports spanning 14 days or less are grouped by day, longer ones by week (named after its Monday). Rows have the same fields as the per-user groups and are sorted oldest first. The CLI and web app show the trend only when there are at least two periods.
 
+## Typical-job profiles (v0.12)
+
+`summary.profiles`: per (user, job name) with at least 3 COMPLETED runs: `cpus_needed = ceil(p90 busy cores x 1.2)`, `mem_needed = ceil(p95 peak memory x 1.2)`, `time_needed = p95 run time x 1.5` rounded up to 15 minutes; compared with the median request. Advice only when it reduces the request (memory by at least 1 GB, time by more than half). Sorted by wasted core-hours.
+
 ## Components
 
 - `backend/analysis.py`: pure Python standard library, no pandas. Parsing, metrics and recommendations. Fully unit-tested.
