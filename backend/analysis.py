@@ -30,27 +30,6 @@ def _safe(fn, *args):
         return None
 
 
-def _finite(x):
-    """Return x if it is a finite number >= 0, else None."""
-    if x is None:
-        return None
-    try:
-        x = float(x)
-    except (TypeError, ValueError, OverflowError):
-        return None
-    if x != x or x in (float("inf"), float("-inf")) or x < 0:
-        return None
-    return x
-
-
-def _safe(fn, *args):
-    """Call a parser; any parsing error or non-finite/negative result becomes None."""
-    try:
-        return _finite(fn(*args))
-    except (ValueError, TypeError, OverflowError, IndexError, AttributeError):
-        return None
-
-
 def parse_timestamp(text):
     """sacct timestamp 'YYYY-MM-DDTHH:MM:SS' (or with a space) -> datetime, or None ('Unknown', 'None', '', invalid)."""
     try:
@@ -65,11 +44,6 @@ def parse_timestamp(text):
 
 
 def parse_duration(text):
-    """Slurm duration -> seconds, or None if missing or unparseable."""
-    return _safe(_parse_duration_unsafe, text)
-
-
-def _parse_duration_unsafe(text):
     """Slurm duration -> seconds, or None if missing or unparseable."""
     return _safe(_parse_duration_unsafe, text)
 
@@ -106,11 +80,6 @@ def _parse_duration_unsafe(text):
 
 
 def parse_mem_mb(text):
-    """Memory string -> MB, or None if missing or unparseable."""
-    return _safe(_parse_mem_mb_unsafe, text)
-
-
-def _parse_mem_mb_unsafe(text):
     """Memory string -> MB, or None if missing or unparseable."""
     return _safe(_parse_mem_mb_unsafe, text)
 
@@ -155,11 +124,6 @@ def _parse_mem_mb_unsafe(text):
 
 
 def parse_req_mem(text, alloc_cpus, nodes=1):
-    """Requested memory -> MB (per-CPU 'c' / per-node 'n' suffix), or None if missing or unparseable."""
-    return _safe(_parse_req_mem_unsafe, text, alloc_cpus, nodes)
-
-
-def _parse_req_mem_unsafe(text, alloc_cpus, nodes=1):
     """Requested memory -> MB (per-CPU 'c' / per-node 'n' suffix), or None if missing or unparseable."""
     return _safe(_parse_req_mem_unsafe, text, alloc_cpus, nodes)
 
