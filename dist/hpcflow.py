@@ -15,7 +15,8 @@ EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,P
 
 KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Start", "End", "Elapsed",
                  "ElapsedRaw", "Timelimit", "AllocCPUS", "NCPUS", "TotalCPU", "CPUTime", "CPUTimeRAW", "ReqMem",
-                 "MaxRSS", "AllocTRES", "ReqTRES", "ExitCode", "Account", "NNodes", "AllocNodes")
+                 "MaxRSS", "AllocTRES", "ReqTRES", "ExitCode", "Account", "NNodes", "AllocNodes",
+                 "TRESUsageInAve", "TRESUsageInTot")
 _CANONICAL = dict((c.lower(), c) for c in KNOWN_COLUMNS)
 
 
@@ -33,6 +34,18 @@ def parse_tres(text):
             key, value = part.split("=", 1)
             out[key.strip()] = value.strip()
     return out
+
+
+def count_gpus(tres_text):
+    """Number of GPUs in a TRES string: 'gres/gpu=2' or typed 'gres/gpu:a100=2'. If both forms are listed,
+    the untyped total is used (Slurm lists both for the same GPUs). 0 if none or unparseable."""
+    tres = parse_tres(tres_text)
+    try:
+        if "gres/gpu" in tres:
+            return int(float(tres["gres/gpu"]))
+        return sum(int(float(v)) for k, v in tres.items() if k.startswith("gres/gpu:"))
+    except (ValueError, TypeError, OverflowError):
+        return 0
 
 
 def _reject_fixed_width(lines):
@@ -310,6 +323,11 @@ def merge_steps(rows):
         else:
             merged_job["MaxRSS"] = ""
         
+        # Highest GPU utilisation recorded on the job or any of its steps (TRESUsageInAve gres/gpuutil)
+        utils = [_safe(float, parse_tres(r.get("TRESUsageInAve")).get("gres/gpuutil")) for r in [parent_row] + step_rows]
+        utils = [u for u in utils if u is not None]
+        merged_job["_gpu_util"] = str(max(utils)) if utils else ""
+
         # Slurm often marks the job FAILED while the step that died is OUT_OF_MEMORY: report the real cause
         if not merged_job.get("State", "").startswith("COMPLETED") and any(
                 r.get("State", "").startswith("OUT_OF_MEMORY") for r in step_rows):
@@ -340,6 +358,8 @@ def analyze_job(job):
     total_cpu_str = job.get("TotalCPU", "")
     req_mem_str = job.get("ReqMem") or tres.get("mem", "")
     max_rss_str = job.get("MaxRSS", "")
+    alloc_gpus = count_gpus(job.get("AllocTRES") or job.get("ReqTRES"))
+    gpu_util = _safe(float, job.get("_gpu_util")) if alloc_gpus else None
     
     # Parse durations
     elapsed_s = parse_duration(elapsed_str)
@@ -404,6 +424,14 @@ def analyze_job(job):
         recommendations.append("Job hit its time limit: request more time or add checkpointing.")
     
     completed = state.startswith("COMPLETED")
+    if completed and gpu_util is not None and alloc_gpus >= 1 and gpu_util < 50:
+        new_gpus = max(1, ceil(alloc_gpus * gpu_util / 100 * 1.2))
+        if alloc_gpus > 1 and new_gpus < alloc_gpus:
+            recommendations.append("GPU utilisation is %.1f%% on %d GPUs: request --gpus=%d instead, or check the work "
+                                   "is spread across all GPUs." % (gpu_util, alloc_gpus, new_gpus))
+        elif gpu_util < 30:
+            recommendations.append("GPU utilisation is %.1f%% on %d GPU%s: check that the job really uses the GPU."
+                                   % (gpu_util, alloc_gpus, "" if alloc_gpus == 1 else "s"))
     # CPU efficiency recommendation
     if completed and cpu_efficiency is not None and cpu_efficiency < 50 and alloc_cpus > 1:
         new_cpus = max(1, ceil(alloc_cpus * cpu_efficiency / 100 * 1.2))
@@ -447,6 +475,9 @@ def analyze_job(job):
         "array_id": job_id.split(".")[0].split("_")[0] if "_" in job_id.split(".")[0] else None,
         "max_rss_mb": max_rss_mb,
         "req_mem_mb": req_mem_mb,
+        "alloc_gpus": alloc_gpus,
+        "gpu_hours": alloc_gpus * elapsed_s / 3600 if alloc_gpus and elapsed_s is not None else None,
+        "gpu_utilization": gpu_util,
         "recommendations": recommendations,
         "user": job.get("User", "") or "",
         "partition": job.get("Partition", "") or ""
