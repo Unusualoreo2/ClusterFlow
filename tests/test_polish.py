@@ -59,3 +59,12 @@ def test_help_is_readable():
     assert "print the full analysis as JSON instead of the text report" in " ".join(out.split())
     assert "Examples:" in out
     assert "clusterflow.py --demo" in out
+
+
+def test_gpu_numbers_have_thousands_separators():
+    """Found on the real IN2P3 month: 'GPU jobs: 1837', 'GPU-hours: 32154.6' among separated numbers."""
+    summary = {"job_count": 5000, "avg_cpu_efficiency": 50, "avg_memory_efficiency": 50, "total_wasted_core_hours": 1,
+               "gpu_job_count": 1837, "total_gpu_hours": 32154.6, "avg_gpu_utilization": None}
+    text = clusterflow_cli.report({"summary": summary, "jobs": []}, 5)
+    assert "GPU jobs:              1,837" in text
+    assert "GPU-hours:             32,154.6" in text
