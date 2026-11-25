@@ -39,6 +39,8 @@ Options: `--all-users` (admins: adds `-a` to sacct), `--json` (machine-readable 
 
 ## Run it with Docker
 
+Not yet tested (Docker was not available on the development machine).
+
 ```bash
 docker build -t hpcflow .
 docker run -p 8000:8000 hpcflow
