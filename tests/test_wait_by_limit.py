@@ -72,3 +72,16 @@ def test_no_section_with_one_band():
 
 def test_demo_shows_section():
     assert "Queue wait by time limit (median)" in clusterflow_cli.report(analysis.analyze(clusterflow_cli.DEMO_SACCT), 5)
+
+
+def test_web_page_renders_bands():
+    """Web parity: the page shows the same section (only with >= 2 bands), built with textContent."""
+    import re
+    with open(os.path.join(ROOT, "frontend", "index.html"), encoding="utf-8") as f:
+        page = f.read()
+    body = re.search(r"function renderWaitByLimit\(bands\) \{(.*?)\n        \}", page, re.S).group(1)
+    assert "bands.length < 2" in body
+    assert "Queue wait by time limit (median)" in body and "fmtWait(" in body
+    assert "These are waits on this data, not a promise." in body
+    assert "innerHTML" not in body
+    assert "renderWaitByLimit(data.summary.wait_by_limit || [])" in page

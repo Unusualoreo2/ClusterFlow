@@ -665,6 +665,30 @@
             groupsSection.appendChild(ul);
         }
 
+        function renderWaitByLimit(bands) {
+            if (bands.length < 2) return;
+            const heading = document.createElement('h3');
+            heading.textContent = 'Queue wait by time limit (median)';
+            groupsSection.appendChild(heading);
+            const table = document.createElement('table');
+            table.className = 'groups-table';
+            const head = table.createTHead().insertRow();
+            ['Time limit', 'Jobs', 'Median wait'].forEach(t => {
+                const th = document.createElement('th');
+                th.textContent = t;
+                head.appendChild(th);
+            });
+            const body = table.createTBody();
+            bands.forEach(b => {
+                const row = body.insertRow();
+                [b.label, b.jobs, fmtWait(b.median_wait_s)].forEach(v => { row.insertCell().textContent = String(v); });
+            });
+            groupsSection.appendChild(table);
+            const note = document.createElement('p');
+            note.textContent = 'Shorter limits can start sooner (Slurm backfill). These are waits on this data, not a promise.';
+            groupsSection.appendChild(note);
+        }
+
         function renderGroups(title, label, groups) {
             if (!groups.length) return;
             const heading = document.createElement('h3');
@@ -751,6 +775,7 @@
                 renderGroups(trend.period === 'day' ? 'Trend by day' : 'Trend by week',
                              trend.period === 'day' ? 'Day' : 'Week of', trend.rows);
             }
+            renderWaitByLimit(data.summary.wait_by_limit || []);
             renderArrays(data.summary.arrays || []);
             renderProfiles(data.summary.profiles || []);
 
