@@ -14,6 +14,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 - Cost of waste at the centre's own rates (`--cpu-hour-cost`, `--gpu-hour-cost`); it never invents prices.
 - Exact advice: `--cpus-per-task`, `--mem`, `--time`, `--gpus`; out-of-memory and timeout jobs flagged.
 - **HTML report:** `--html report.html` for one file to open, print or email.
+- **For HPC teams:** `--split-by-user DIR` (one report per researcher) and `--compare BEFORE` (what improved).
 - **Typical-job advice:** for jobs a user runs 3+ times, sized from near-worst runs (p90 CPU, p95 memory and time).
 - "What to fix first" headline; `--anonymise` for shareable reports; plain-English notes when columns are missing.
 
@@ -25,8 +26,8 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.17, **707 tests, all passing** |
-| Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` |
+| Version | v0.19, **729 tests, all passing** |
+| Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
 | Live cluster | **Never run on one yet** |
@@ -64,6 +65,8 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.15 | `--html report.html` for one file to open, print or email; bundle checked on Python 3.15 |
 | v0.16 | Paste-ready `#SBATCH` lines for typical jobs (CLI, HTML, web); bundle tested on real Python 3.6.8 and 3.8.10 (`tests/test_real_old_python.py`, embeddable builds in `%LOCALAPPDATA%\Programs\python-embed`) |
 | v0.17 | --split-by-user DIR: one HTML report per user for HPC teams; `analysis.analyze_by_user` parses once (200 users / 20k jobs: 1.4 s, was 28 s) |
+| v0.18 | `--compare BEFORE`: what improved between two periods; try-it-yourself guide with before/after samples; Qwen worker cannot edit tests/ |
+| v0.19 | `--version`; readable `--help`; web "Download report (HTML)"; HTML report readable in dark mode; IN2P3 month re-checked (same results); progress report and README synced |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -78,14 +81,14 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 1. **GitHub `workflow` permission:** run `gh auth refresh -h github.com -s workflow` and approve the device code; then move `tools/ci/tests.yml` to `.github/workflows/` (steps in `tools/ci/README.md`). Never commit it there before approval, or every auto-push is rejected.
 2. **Kelvin2 (QUB) access:** requested (up to 8 cores / 8 GB per job, <20 core-hours). When granted, follow `docs/pilot-guide.md` (about 15 minutes, 2.5 core-hours).
 3. **COSMA: ignore** (user's instruction). No SSH keys exist on this PC.
-4. Delete the old `Computer Science\HPCFlow` folder once nothing uses it (the project now lives in `Computer Science\ClusterFlow`).
+4. Move to the new folder: run `git pull` in `Computer Science\ClusterFlow\MVP` FIRST, check `git log -1` there matches GitHub, then delete the old `Computer Science\HPCFlow` folder (close sessions using it first).
 
 ## 7. Open items and next candidates
 
-- CIUK demo: done in v0.14 (`python dist/clusterflow.py --demo`); a printable one-page handout could follow.
+- CIUK demo: done (`--demo`, `--html`, web demo button, `docs/try-it-yourself.md`).
 - Typical-job advice tested only on constructed data (IN2P3 has no job names).
 - Docker image never built (README marks it untested).
-- Python 3.6/3.8: now run for real locally (v0.16). Docker needs an admin install, so it is still untested.
+- Python 3.6/3.8: run for real in the test suite (v0.16).
 - Roofline / hardware-counter analysis; hosted multi-user version: not started.
 
 ## 8. Key files
