@@ -393,15 +393,15 @@ def analyze_job(job):
     elif state.startswith("TIMEOUT"):
         recommendations.append("Job hit its time limit: request more time or add checkpointing.")
     
+    completed = state.startswith("COMPLETED")
     # CPU efficiency recommendation
-    if cpu_efficiency is not None and cpu_efficiency < 50 and alloc_cpus > 1:
+    if completed and cpu_efficiency is not None and cpu_efficiency < 50 and alloc_cpus > 1:
         new_cpus = max(1, ceil(alloc_cpus * cpu_efficiency / 100 * 1.2))
         recommendations.append(f"CPU efficiency is {cpu_efficiency:.1f}%: request --cpus-per-task={new_cpus} CPUs instead of {alloc_cpus}, or check the code really runs in parallel.")
     
-    # Memory efficiency recommendation
-    if memory_efficiency is not None and memory_efficiency < 50:
-        if max_rss_mb is not None:
-            new_mem = ceil(max_rss_mb * 1.25)
+    if completed and memory_efficiency is not None and memory_efficiency < 50:
+        new_mem = ceil(max_rss_mb * 1.25) if max_rss_mb is not None else None
+        if new_mem is not None and req_mem_mb - new_mem >= 1024:
             recommendations.append(f"Memory efficiency is {memory_efficiency:.1f}%: request --mem={new_mem}M instead.")
     
     # High memory efficiency warning
@@ -409,7 +409,7 @@ def analyze_job(job):
         recommendations.append(f"Peak memory is {memory_efficiency:.1f}% of the request: the job is close to its memory limit, request a little more to be safe.")
     
     # Time usage recommendation
-    if elapsed_s is not None and elapsed_s > 0 and time_used is not None and time_used < 25:
+    if completed and elapsed_s is not None and elapsed_s > 0 and time_used is not None and time_used < 25:
         # Calculate new time limit (elapsed * 1.5 rounded up to next 15 min)
         new_time_limit_s = elapsed_s * 1.5
         # Round up to next multiple of 900 seconds (15 minutes)
