@@ -1087,6 +1087,14 @@ def report(result, top):
     trend = summary.get("trend") or {"period": None, "rows": []}
     if len(trend["rows"]) >= 2:
         lines += _group_table("Trend by %s" % trend["period"], trend["rows"])
+    profiles = [p for p in summary.get("profiles", []) if p["recommendations"]][:max(0, top)]
+    if profiles:
+        lines.append("Typical jobs (sized from repeated runs)")
+        for p in profiles:
+            lines.append("  %s / %s (%d runs)" % (p["user"] or "-", p["name"], p["runs"]))
+            for rec in p["recommendations"]:
+                lines.append("    - " + rec)
+        lines.append("")
     arrays = summary.get("arrays", [])
     if arrays:
         shown = arrays[:max(0, top)]
