@@ -102,6 +102,9 @@ def report(result, top):
         lines += _group_table("By user", summary["by_user"])
     if summary.get("by_partition"):
         lines += _group_table("By partition", summary["by_partition"])
+    trend = summary.get("trend") or {"period": None, "rows": []}
+    if len(trend["rows"]) >= 2:
+        lines += _group_table("Trend by %s" % trend["period"], trend["rows"])
     arrays = summary.get("arrays", [])
     if arrays:
         shown = arrays[:max(0, top)]

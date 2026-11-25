@@ -661,6 +661,11 @@
             groupsSection.textContent = '';
             renderGroups('By user', 'User', data.summary.by_user || []);
             renderGroups('By partition', 'Partition', data.summary.by_partition || []);
+            const trend = data.summary.trend || {rows: []};
+            if (trend.rows.length >= 2) {
+                renderGroups(trend.period === 'day' ? 'Trend by day' : 'Trend by week',
+                             trend.period === 'day' ? 'Day' : 'Week of', trend.rows);
+            }
             renderArrays(data.summary.arrays || []);
 
             // Show at most MAX_ROWS jobs, most wasteful first (the CSV download still has all jobs)

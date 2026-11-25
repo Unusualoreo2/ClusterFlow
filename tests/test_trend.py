@@ -68,3 +68,11 @@ def test_cli_no_trend_for_a_single_period(tmp_path):
     cli = os.path.join(ROOT, "backend", "hpcflow_cli.py")
     out = subprocess.run([sys.executable, cli, str(f)], stdout=subprocess.PIPE, universal_newlines=True, timeout=60).stdout
     assert "Trend by" not in out
+
+
+def test_cli_prints_the_trend_once(tmp_path):
+    f = tmp_path / "o.txt"
+    f.write_text(HDR + job(1, "2026-11-20T09:00:00") + job(2, "2026-11-21T09:00:00"), encoding="utf-8")
+    cli = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+    out = subprocess.run([sys.executable, cli, str(f)], stdout=subprocess.PIPE, universal_newlines=True, timeout=60).stdout
+    assert out.count("Trend by day") == 1

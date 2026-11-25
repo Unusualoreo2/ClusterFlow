@@ -75,9 +75,14 @@ const tools = {
         for (let i = 0; i + want.length <= lines.length; i++)
           if (want.every((w, k) => lines[i + k].trim() === w)) hits.push(i);
         if (hits.length === 1) {
-          const i = hits[0], have = lines[i].match(/^\s*/)[0], gave = old_text.match(/^[ \t]*/)[0];
-          const extra = have.length > gave.length ? have.slice(gave.length) : "";
-          const repl = new_text.replace(/\n+$/, "").split("\n").map(l => (l.trim() ? extra + l : l));
+          // Shift the replacement so its first line has the same indentation as the matched line.
+          const i = hits[0], have = lines[i].match(/^[ \t]*/)[0].length;
+          const newLines = new_text.replace(/\n+$/, "").split("\n");
+          const first = newLines.find(l => l.trim()) || "";
+          const delta = have - first.match(/^[ \t]*/)[0].length;
+          const shift = l => !l.trim() ? l : delta >= 0 ? " ".repeat(delta) + l
+            : l.replace(new RegExp("^ {0," + (-delta) + "}"), "");
+          const repl = newLines.map(shift);
           lines.splice(i, want.length, ...repl);
           await fs.writeFile(f, lines.join("\n"), "utf8");
           return `Replaced text in ${p} (matched ignoring indentation)`;
