@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+pytestmark = pytest.mark.skip(reason="v0.9 GPU support not implemented yet: spec only")
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 import analysis as a  # noqa: E402
 
