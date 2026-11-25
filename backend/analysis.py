@@ -262,7 +262,7 @@ def read_sacct(text):
     for line in lines[1:]:
         values = [v.strip() for v in line.split(delimiter)]
         # Skip if this line's values match the header names exactly
-        if [_canonical(v) for v in values] == headers:
+        if values and _canonical(values[0]) == headers[0] and [_canonical(v) for v in values] == headers:
             continue
         row_dict = {}
         for i, header in enumerate(headers):
