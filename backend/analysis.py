@@ -10,9 +10,9 @@ EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,P
                   "Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt")
 
 KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Start", "End", "Elapsed",
-                 "ElapsedRaw", "Timelimit", "AllocCPUS", "NCPUS", "TotalCPU", "CPUTime", "CPUTimeRAW", "ReqMem",
-                 "MaxRSS", "AllocTRES", "ReqTRES", "ExitCode", "Account", "NNodes", "AllocNodes",
-                 "TRESUsageInAve", "TRESUsageInTot")
+                  "ElapsedRaw", "Timelimit", "AllocCPUS", "NCPUS", "TotalCPU", "CPUTime", "CPUTimeRAW", "ReqMem",
+                  "MaxRSS", "AllocTRES", "ReqTRES", "ExitCode", "Account", "NNodes", "AllocNodes",
+                  "TRESUsageInAve", "TRESUsageInTot", "AllocMem", "AllocGPUs")
 _CANONICAL = dict((c.lower(), c) for c in KNOWN_COLUMNS)
 
 
@@ -77,6 +77,18 @@ def _safe(fn, *args):
 
 
 def parse_timestamp(text):
+    """Timestamp -> datetime, or None. Accepts sacct text ('YYYY-MM-DDTHH:MM:SS', or with a space) and Unix
+    seconds as used by published datasets (returned as UTC)."""
+    text = (text or "").strip()
+    if text.isdigit() and 9 <= len(text) <= 11:
+        try:
+            return datetime(1970, 1, 1) + timedelta(seconds=int(text))  # UTC; works on Python 3.6 to 3.13+
+        except (ValueError, OverflowError, OSError):
+            return None
+    return _parse_timestamp_text(text)
+
+
+def _parse_timestamp_text(text):
     """sacct timestamp 'YYYY-MM-DDTHH:MM:SS' (or with a space) -> datetime, or None ('Unknown', 'None', '', invalid)."""
     try:
         return datetime.strptime(text, "%Y-%m-%dT%H:%M:%S")
@@ -104,6 +116,8 @@ def _parse_duration_unsafe(text):
     Returns:
         float | None: Duration in seconds, or None for None, "", "UNLIMITED", "Partition_Limit", "INVALID" or unparseable
     """
+    if text is not None and re.match(r"^\s*\d+(\.\d+)?\s*$", str(text)):
+        return float(text)  # a plain number means seconds (published datasets, Slurm *Raw fields)
     if text is None or text == "" or text in ("UNLIMITED", "Partition_Limit", "INVALID"):
         return None
     
@@ -253,7 +267,7 @@ def read_sacct(text):
         row_dict = {}
         for i, header in enumerate(headers):
             if i < len(values):
-                row_dict[header] = values[i]
+                row_dict[header] = values[i].upper() if header == "State" else values[i]
             else:
                 row_dict[header] = ""
         result.append(row_dict)
@@ -378,9 +392,11 @@ def analyze_job(job):
     tres = parse_tres(job.get("AllocTRES")) or parse_tres(job.get("ReqTRES"))
     alloc_cpus_str = job.get("AllocCPUS") or job.get("NCPUS") or tres.get("cpu", "")
     total_cpu_str = job.get("TotalCPU", "")
-    req_mem_str = job.get("ReqMem") or tres.get("mem", "")
+    req_mem_str = job.get("ReqMem") or tres.get("mem", "") or job.get("AllocMem", "")
     max_rss_str = job.get("MaxRSS", "")
     alloc_gpus = count_gpus(job.get("AllocTRES") or job.get("ReqTRES"))
+    if not alloc_gpus:
+        alloc_gpus = int(_safe(float, job.get("AllocGPUs")) or 0)
     gpu_util = _safe(float, job.get("_gpu_util")) if alloc_gpus else None
     
     # Parse durations
@@ -724,7 +740,7 @@ def _column_warnings(headers):
         warnings.append("AllocCPUS column missing: CPU efficiency is not available.")
     if not has("MaxRSS"):
         warnings.append("MaxRSS column missing: memory efficiency is not available.")
-    if not has("ReqMem", "AllocTRES", "ReqTRES"):
+    if not has("ReqMem", "AllocTRES", "ReqTRES", "AllocMem"):
         warnings.append("ReqMem column missing: memory efficiency is not available.")
     if not has("Timelimit"):
         warnings.append("Timelimit column missing: time-limit advice is not available.")
