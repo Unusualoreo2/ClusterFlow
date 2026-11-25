@@ -50,6 +50,9 @@ def test_all_six_pass(tmp_path):
     for kind in GOOD_RUN:
         assert line_for(r.stdout, kind).startswith("PASS"), r.stdout
     assert "6/6 passed" in r.stdout
+    # the detail shows real figures, not placeholders
+    assert "cpu=12%" in line_for(r.stdout, "overcpu") and "mem=6%" in line_for(r.stdout, "overmem")
+    assert "time=4%" in line_for(r.stdout, "overtime")
 
 
 def test_wrong_verdict_fails(tmp_path):
@@ -73,6 +76,7 @@ def test_oom_not_enforced_is_inconclusive(tmp_path):
     jobs["oom"] = ("COMPLETED", "00:00:05", "00:15:00", 1, "00:00:04", "1G", "3072M")
     r = run_check(tmp_path, jobs)
     assert line_for(r.stdout, "oom").startswith("INCONCLUSIVE")
+    assert "did not enforce the memory limit" in line_for(r.stdout, "oom")
     assert r.returncode == 0  # not HPCFlow's fault: the cluster did not enforce the limit
 
 
