@@ -66,3 +66,13 @@ ClusterFlow suggests how to improve your next job:
 - If memory efficiency is high (>90%), warn that the job is near its limit.
 - If time used is low, suggest a shorter time limit.
 - If a job ran out of memory or timed out, suggest more resources.
+
+## Try it first: `--demo`
+
+To see what a full report looks like before using your own jobs, run:
+
+```bash
+python3 dist/clusterflow.py --demo
+```
+
+It analyses a small built-in sample (made-up jobs, marked as such at the top of the report) that shows every kind of finding: wasted CPUs, memory and time, out-of-memory and timed-out jobs, idle GPUs, a job array and typical-job advice. It works anywhere Python 3.6+ runs, with no cluster or data needed, and combines with the usual options (`--anonymise`, `--json`, `--csv`, `--cpu-hour-cost`).

@@ -74,6 +74,44 @@ FIX_CATEGORIES = [
 ]
 
 
+def _demo_sacct():
+    """Made-up sample for `--demo`: small, but shows every kind of finding."""
+    def job(jid, name, user, part, state, day, wait_min, el, tl, cpus, tot, req, rss, tres="", util=""):
+        submit = "2026-11-%02dT09:00:00" % day
+        start = "2026-11-%02dT%02d:%02d:00" % (day, 9 + wait_min // 60, wait_min % 60)
+        alloc = tres or "billing=%d,cpu=%d,mem=%s,node=1" % (cpus, cpus, req)
+        return ("%s|%s|%s|%s|%s|%s|%s|%s|%s|%d|%s|%s||%s|\n"
+                % (jid, name, user, part, state, submit, start, el, tl, cpus, tot, req, alloc)
+                + "%s.batch|batch|||%s||%s|%s||%d|%s||%s||%s\n" % (jid, state, start, el, cpus, tot, rss, util))
+
+    rows = ["JobID|JobName|User|Partition|State|Submit|Start|Elapsed|Timelimit|AllocCPUS|TotalCPU|ReqMem|MaxRSS"
+            "|AllocTRES|TRESUsageInAve\n"]
+    for i in range(8):
+        rows.append(job(4471201 + i, "cfd_mesh", "amurphy", "compute", "COMPLETED", 16 + i % 5, 10 + 25 * i,
+                        "03:00:00", "12:00:00", 32, "1-%02d:00:00" % (4 + i % 5), "64G", "%dM" % (9000 + 400 * i)))
+    for i in range(4):
+        rows.append(job(4471301 + i, "md_run", "jkelly", "compute", "COMPLETED", 16 + i, 60 * i,
+                        "11:30:00", "12:00:00", 16, "7-00:00:00", "32G", "31000M"))
+    for i in range(2):
+        rows.append(job(4471305 + i, "md_run", "jkelly", "compute", "TIMEOUT", 19 + i, 200,
+                        "12:00:00", "12:00:00", 16, "7-08:00:00", "32G", "30000M"))
+    for i in range(3):
+        rows.append(job(4471401 + i, "genome_align", "sdoyle", "himem", "OUT_OF_MEMORY", 17 + i, 30,
+                        "00:40:00", "04:00:00", 8, "05:00:00", "16G", "16384M"))
+    for i in range(3):
+        rows.append(job(4471501 + i, "train_net", "ocallaghan", "gpu", "COMPLETED", 16 + 2 * i, 240,
+                        "06:00:00", "08:00:00", 8, "40:00:00", "64G", "50000M",
+                        tres="billing=8,cpu=8,gres/gpu=4,mem=64G,node=1",
+                        util="cpu=40:00:00,gres/gpuutil=18,mem=50000M"))
+    for i in range(12):
+        rows.append(job("4472000_%d" % (i + 1), "param_sweep", "rbrennan", "compute", "COMPLETED", 18, 5 * i,
+                        "00:20:00", "04:00:00", 4, "00:25:00", "8G", "900M"))
+    return "".join(rows)
+
+
+DEMO_SACCT = _demo_sacct()
+
+
 def fix_first(jobs):
     """Lines like '2 jobs: request fewer CPUs', most common first (ties keep FIX_CATEGORIES order)."""
     counts = []
@@ -223,7 +261,8 @@ def _rate(currency, value):
 def anonymise(result):
     """Copy of an analyze() result with users, job names and job IDs replaced by user1/job1/J1 labels.
     Same value -> same label, numbered in order of first appearance in result["jobs"].
-    Empty users stay empty and the "(unknown)" group stays as it is. Partitions and numbers are kept."""
+    Empty users stay empty and the "(unknown)" group stays as it is. Partitions and numbers are kept.
+    Typical-job profiles and job arrays are relabelled too."""
     out = copy.deepcopy(result)
     users, names, ids = {}, {}, {}
 
@@ -246,6 +285,10 @@ def anonymise(result):
     for j in out["jobs"]:
         if j.get("array_id"):
             j["array_id"] = label(arrays, j["array_id"], "A")
+    for p in out.get("summary", {}).get("profiles", []):
+        if p.get("user"):
+            p["user"] = label(users, p["user"], "user")
+        p["name"] = label(names, p.get("name", ""), "job")
     for g in out.get("summary", {}).get("by_user", []):
         if g["name"] != "(unknown)":
             g["name"] = label(users, g["name"], "user")
@@ -267,10 +310,13 @@ def main(argv=None):
     parser.add_argument("--gpu-hour-cost", type=float, default=None,
                         help="your centre's price per GPU-hour, to show what idle GPU time costs")
     parser.add_argument("--currency", default="£", help="currency symbol for costs (default: £)")
+    parser.add_argument("--demo", action="store_true", help="analyse a built-in sample (made-up data) to see what the report looks like")
 
     args = parser.parse_args(argv)
 
-    text = read_input(args)
+    if args.demo and (args.file is not None or args.days is not None):
+        fail("--demo uses built-in sample data: do not also give a file or --days")
+    text = DEMO_SACCT if args.demo else read_input(args)
     try:
         result = analyze(text)
     except ValueError as e:
@@ -287,6 +333,8 @@ def main(argv=None):
     if args.json:
         print(json.dumps(result, indent=2))
     else:
+        if args.demo:
+            print("Demo: built-in sample data (made up for illustration, not from a real cluster)")
         print(report(result, args.top))
 
     if args.csv:

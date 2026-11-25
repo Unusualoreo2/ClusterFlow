@@ -30,6 +30,7 @@ Copy `backend/analysis.py` and `backend/clusterflow_cli.py` to the cluster (Pyth
 
 ```bash
 python3 clusterflow_cli.py                 # runs sacct for your jobs of the last 7 days
+python3 clusterflow_cli.py --demo           # see what a report looks like (made-up data)
 python3 clusterflow_cli.py --days 30 --top 10
 python3 clusterflow_cli.py jobs.txt --csv report.csv
 sacct -P ... | python3 clusterflow_cli.py -
