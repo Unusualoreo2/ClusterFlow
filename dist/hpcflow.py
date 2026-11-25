@@ -917,6 +917,11 @@ def report(result, top):
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
         lines.append("Max queue wait:        %s" % fmt_wait(summary["max_wait_s"]))
+    if summary.get("gpu_job_count"):
+        lines.append("GPU jobs:              %d" % summary["gpu_job_count"])
+        lines.append("GPU-hours:             %s" % ("-" if summary["total_gpu_hours"] is None
+                                                    else "%.1f" % summary["total_gpu_hours"]))
+        lines.append("Avg GPU utilisation:   %s" % pct(summary["avg_gpu_utilization"]))
     for w in result.get("warnings", []):
         lines.append("Note: " + w)
     lines.append("")
