@@ -481,6 +481,128 @@ def summarize_groups(results, key):
     return result
 
 
+def summarize_arrays(results):
+    """One entry per job array with at least 2 tasks, sorted by wasted core-hours (desc), then array_id.
+    Advice uses only COMPLETED tasks; failed tasks are counted and reported."""
+    # Algorithm:
+    # - groups = {} keyed by job["array_id"] (skip jobs whose array_id is None); keep insertion order (use a list of keys).
+    # - For each group with len(tasks) >= 2:
+    #     done = [t for t in tasks if t["state"].startswith("COMPLETED")]
+    #     n = len(tasks); nd = len(done)
+    #     states: dict counting t["state"].split()[0] if t["state"] else "UNKNOWN"   (e.g. "CANCELLED by 12" -> "CANCELLED")
+    #     cpu_vals = [t["cpu_efficiency"] for t in done if t["cpu_efficiency"] is not None]
+    #     mem_vals = [t["memory_efficiency"] for t in done if t["memory_efficiency"] is not None]
+    #     avg_cpu = sum(cpu_vals)/len(cpu_vals) if cpu_vals else None   (same for avg_mem)
+    #     rss = [t["max_rss_mb"] for t in done if t["max_rss_mb"] is not None]; peak = max(rss) if rss else None
+    #     req = [t["req_mem_mb"] for t in done if t["req_mem_mb"] is not None]; req_mb = max(req) if req else None
+    #     cpus = max([t["alloc_cpus"] for t in done] or [0])
+    #     wasted = sum(t["wasted_core_hours"] for t in tasks if t["wasted_core_hours"] is not None)
+    #     oom = states.get("OUT_OF_MEMORY", 0); timeouts = states.get("TIMEOUT", 0)
+    #     recs = []
+    #     if oom: recs.append("%d of %d tasks ran out of memory: request more memory for this array." % (oom, n))
+    #     if timeouts: recs.append("%d of %d tasks hit the time limit: request more time or add checkpointing." % (timeouts, n))
+    #     if avg_cpu is not None and avg_cpu < 50 and cpus > 1:
+    #         new_cpus = max(1, ceil(cpus * avg_cpu / 100 * 1.2))
+    #         recs.append("Average CPU efficiency over %d tasks is %.1f%%: request --cpus-per-task=%d instead of %d." % (nd, avg_cpu, new_cpus, cpus))
+    #     if peak is not None and req_mb is not None and req_mb - ceil(peak * 1.25) >= 1024:
+    #         recs.append("Peak memory over %d tasks is %dM of %dM requested: request --mem=%dM for this array." % (nd, round(peak), round(req_mb), ceil(peak * 1.25)))
+    #     if not timeouts:
+    #         pairs = [(t["elapsed_s"], t["time_used"]) for t in done if t["elapsed_s"] and t["time_used"] is not None]
+    #         if pairs:
+    #             longest, used = max(pairs)
+    #             if used < 25:
+    #                 limit = ceil(longest * 1.5 / 900) * 900
+    #                 recs.append("The longest of %d tasks used %.1f%% of the time limit: request --time=%02d:%02d:00 for this array." % (nd, used, limit // 3600, (limit % 3600) // 60))
+    #     entry = {"array_id": key, "name": tasks[0]["name"], "user": tasks[0].get("user", ""), "task_count": n,
+    #              "states": states, "avg_cpu_efficiency": avg_cpu, "avg_memory_efficiency": avg_mem,
+    #              "peak_memory_mb": peak, "wasted_core_hours": wasted, "recommendations": recs}
+    # - Sort the entries with key=lambda e: (-e["wasted_core_hours"], e["array_id"]) and return the list.
+    
+    groups = {}
+    keys = []
+    for job in results:
+        array_id = job.get("array_id")
+        if array_id is None:
+            continue
+        if array_id not in groups:
+            groups[array_id] = []
+            keys.append(array_id)
+        groups[array_id].append(job)
+    
+    entries = []
+    for key in keys:
+        tasks = groups[key]
+        if len(tasks) < 2:
+            continue
+            
+        # Filter completed tasks
+        done = [t for t in tasks if t["state"].startswith("COMPLETED")]
+        n = len(tasks)
+        nd = len(done)
+        
+        # Count states
+        states = {}
+        for t in tasks:
+            state = t.get("state", "")
+            if state:
+                state_key = state.split()[0]
+            else:
+                state_key = "UNKNOWN"
+            states[state_key] = states.get(state_key, 0) + 1
+        
+        # CPU and memory efficiency
+        cpu_vals = [t["cpu_efficiency"] for t in done if t["cpu_efficiency"] is not None]
+        mem_vals = [t["memory_efficiency"] for t in done if t["memory_efficiency"] is not None]
+        
+        avg_cpu = sum(cpu_vals) / len(cpu_vals) if cpu_vals else None
+        avg_mem = sum(mem_vals) / len(mem_vals) if mem_vals else None
+        
+        # Memory metrics
+        rss = [t["max_rss_mb"] for t in done if t["max_rss_mb"] is not None]
+        peak = max(rss) if rss else None
+        
+        req = [t["req_mem_mb"] for t in done if t["req_mem_mb"] is not None]
+        req_mb = max(req) if req else None
+        
+        cpus = max([t["alloc_cpus"] for t in done] or [0])
+        
+        # Wasted core hours
+        wasted = sum(t["wasted_core_hours"] for t in tasks if t["wasted_core_hours"] is not None)
+        
+        # Failures
+        oom = states.get("OUT_OF_MEMORY", 0)
+        timeouts = states.get("TIMEOUT", 0)
+        
+        # Recommendations
+        recs = []
+        if oom:
+            recs.append("%d of %d tasks ran out of memory: request more memory for this array." % (oom, n))
+        if timeouts:
+            recs.append("%d of %d tasks hit the time limit: request more time or add checkpointing." % (timeouts, n))
+        if avg_cpu is not None and avg_cpu < 50 and cpus > 1:
+            new_cpus = max(1, ceil(cpus * avg_cpu / 100 * 1.2))
+            recs.append("Average CPU efficiency over %d tasks is %.1f%%: request --cpus-per-task=%d instead of %d." % (nd, avg_cpu, new_cpus, cpus))
+        if peak is not None and req_mb is not None and req_mb - ceil(peak * 1.25) >= 1024:
+            recs.append("Peak memory over %d tasks is %dM of %dM requested: request --mem=%dM for this array." % (nd, round(peak), round(req_mb), ceil(peak * 1.25)))
+        if not timeouts:
+            pairs = [(t["elapsed_s"], t["time_used"]) for t in done if t["elapsed_s"] and t["time_used"] is not None]
+            if pairs:
+                longest, used = max(pairs)
+                if used < 25:
+                    limit = ceil(longest * 1.5 / 900) * 900
+                    recs.append("The longest of %d tasks used %.1f%% of the time limit: request --time=%02d:%02d:00 for this array." % (nd, used, limit // 3600, (limit % 3600) // 60))
+        
+        entry = {"array_id": key, "name": tasks[0]["name"], "user": tasks[0].get("user", ""), "task_count": n,
+                   "states": states, "avg_cpu_efficiency": avg_cpu, "avg_memory_efficiency": avg_mem,
+                   "peak_memory_mb": peak, "wasted_core_hours": wasted, "recommendations": recs}
+        entries.append(entry)
+    
+    # Sort by wasted core hours (descending) then array_id
+    entries.sort(key=lambda e: (-e["wasted_core_hours"], e["array_id"]))
+    
+    return entries
+
+
 def analyze(text):
     """
     Analyze sacct output and return job analysis.
@@ -578,6 +700,7 @@ def analyze(text):
             "total_wasted_core_hours": total_wasted_core_hours,
             "avg_wait_s": avg_wait_s,
             "max_wait_s": max_wait_s,
+            "arrays": summarize_arrays(analyzed_jobs),
             "by_user": by_user,
             "by_partition": by_partition
         }
