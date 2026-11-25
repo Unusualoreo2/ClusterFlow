@@ -202,7 +202,7 @@ def merge_steps(rows):
         max_rss_mb = None
         winning_row = None
         for row in [parent_row] + step_rows:
-            if row["MaxRSS"]:
+            if "MaxRSS" in row and row["MaxRSS"]:
                 rss_mb = parse_mem_mb(row["MaxRSS"])
                 if rss_mb is not None:
                     if max_rss_mb is None or rss_mb > max_rss_mb:
@@ -210,7 +210,7 @@ def merge_steps(rows):
                         winning_row = row
         
         # Set the MaxRSS to the original text of the row with maximum value
-        if winning_row is not None and winning_row["MaxRSS"]:
+        if winning_row is not None and "MaxRSS" in winning_row and winning_row["MaxRSS"]:
             merged_job["MaxRSS"] = winning_row["MaxRSS"]
         else:
             merged_job["MaxRSS"] = ""
@@ -330,8 +330,78 @@ def analyze_job(job):
         "memory_efficiency": memory_efficiency,
         "time_used": time_used,
         "wasted_core_hours": wasted_core_hours,
-        "recommendations": recommendations
+        "recommendations": recommendations,
+        "user": job.get("User", "") or "",
+        "partition": job.get("Partition", "") or ""
     }
+
+
+def summarize_groups(results, key):
+    """Group analysed jobs by results[i][key]; return a list of dicts sorted by wasted_core_hours (desc), then name."""
+    # name = the value, or "(unknown)" if it is "".
+    # each group dict: {"name", "job_count", "avg_cpu_efficiency", "avg_memory_efficiency", "wasted_core_hours"}
+    # averages ignore None values and are None if nothing to average; wasted_core_hours sums non-None values (0.0 if none).
+    # sort: key=lambda g: (-g["wasted_core_hours"], g["name"])
+    
+    groups = {}
+    for job in results:
+        value = job.get(key, "")
+        if value == "":
+            name = "(unknown)"
+        else:
+            name = value
+        if name not in groups:
+            groups[name] = {
+                "name": name,
+                "job_count": 0,
+                "avg_cpu_efficiency": None,
+                "avg_memory_efficiency": None,
+                "wasted_core_hours": 0.0,
+                "_cpu_n": 0,
+                "_mem_n": 0
+            }
+        group = groups[name]
+        group["job_count"] += 1
+        
+        # Handle wasted core hours (sum)
+        wasted_core_hours = job.get("wasted_core_hours")
+        if wasted_core_hours is not None:
+            group["wasted_core_hours"] += wasted_core_hours
+        
+        # Handle averages
+        cpu_eff = job.get("cpu_efficiency")
+        mem_eff = job.get("memory_efficiency")
+        
+        if cpu_eff is not None:
+            if group["avg_cpu_efficiency"] is None:
+                group["avg_cpu_efficiency"] = cpu_eff
+            else:
+                group["avg_cpu_efficiency"] += cpu_eff
+            group["_cpu_n"] += 1
+        
+        if mem_eff is not None:
+            if group["avg_memory_efficiency"] is None:
+                group["avg_memory_efficiency"] = mem_eff
+            else:
+                group["avg_memory_efficiency"] += mem_eff
+            group["_mem_n"] += 1
+    
+    # Convert sums to averages where applicable
+    for group in groups.values():
+        if group["avg_cpu_efficiency"] is not None:
+            group["avg_cpu_efficiency"] /= group["_cpu_n"]
+        if group["avg_memory_efficiency"] is not None:
+            group["avg_memory_efficiency"] /= group["_mem_n"]
+        
+        # Remove helper keys
+        del group["_cpu_n"]
+        del group["_mem_n"]
+    
+    # Convert to list and sort
+    result = list(groups.values())
+    result.sort(key=lambda g: (-g["wasted_core_hours"], g["name"]))
+    
+    return result
 
 
 def analyze(text):
@@ -402,6 +472,21 @@ def analyze(text):
     if memory_efficiencies:
         avg_memory_efficiency = sum(memory_efficiencies) / len(memory_efficiencies)
     
+    # Get header columns from rows to check for User and Partition
+    headers = set()
+    if rows:
+        headers = set(rows[0].keys())
+    
+    # Build by_user and by_partition summaries
+    by_user = []
+    by_partition = []
+    
+    if "User" in headers:
+        by_user = summarize_groups(analyzed_jobs, "user")
+    
+    if "Partition" in headers:
+        by_partition = summarize_groups(analyzed_jobs, "partition")
+    
     return {
         "jobs": analyzed_jobs,
         "skipped": skipped,
@@ -409,6 +494,8 @@ def analyze(text):
             "job_count": job_count,
             "avg_cpu_efficiency": avg_cpu_efficiency,
             "avg_memory_efficiency": avg_memory_efficiency,
-            "total_wasted_core_hours": total_wasted_core_hours
+            "total_wasted_core_hours": total_wasted_core_hours,
+            "by_user": by_user,
+            "by_partition": by_partition
         }
     }
