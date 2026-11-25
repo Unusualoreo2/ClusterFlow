@@ -6,6 +6,39 @@ import re
 from datetime import datetime
 from math import ceil
 
+EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,"
+                  "Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt")
+
+KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Start", "End", "Elapsed",
+                 "ElapsedRaw", "Timelimit", "AllocCPUS", "NCPUS", "TotalCPU", "CPUTime", "CPUTimeRAW", "ReqMem",
+                 "MaxRSS", "AllocTRES", "ReqTRES", "ExitCode", "Account", "NNodes", "AllocNodes")
+_CANONICAL = dict((c.lower(), c) for c in KNOWN_COLUMNS)
+
+
+def _canonical(name):
+    """Header name in any case (e.g. 'maxrss') -> the usual sacct spelling ('MaxRSS'); unknown names unchanged."""
+    name = name.strip().lstrip("﻿")
+    return _CANONICAL.get(name.lower(), name)
+
+
+def parse_tres(text):
+    """TRES string 'billing=1,cpu=4,mem=7996M,node=1' -> {'billing': '1', 'cpu': '4', ...}; {} if empty/invalid."""
+    out = {}
+    for part in (text or "").split(","):
+        if "=" in part:
+            key, value = part.split("=", 1)
+            out[key.strip()] = value.strip()
+    return out
+
+
+def _reject_fixed_width(lines):
+    """sacct output without -P has space-padded columns and a '----' line: refuse it with a clear message."""
+    words = lines[0].split()
+    dashes = len(lines) > 1 and set(lines[1].replace(" ", "")) == {"-"}
+    if len(words) > 1 or dashes:
+        raise ValueError("This looks like fixed-width sacct output (exported without -P), which cannot be read "
+                         "reliably. Re-export with: " + EXPORT_COMMAND)
+
 SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
 
 
@@ -184,17 +217,25 @@ def read_sacct(text):
     
     # Determine delimiter from header
     header_line = lines[0]
-    delimiter = "|" if "|" in header_line else ","
+    if "\t" in header_line:
+        delimiter = "\t"
+    elif "|" in header_line:
+        delimiter = "|"
+    elif "," in header_line:
+        delimiter = ","
+    else:
+        _reject_fixed_width(lines)
+        delimiter = "|"
     
     # Parse header
-    headers = [h.strip() for h in header_line.split(delimiter)]
+    headers = [_canonical(h) for h in header_line.split(delimiter)]
     
     # Parse rows
     result = []
     for line in lines[1:]:
         values = [v.strip() for v in line.split(delimiter)]
         # Skip if this line's values match the header names exactly
-        if values == headers:
+        if [_canonical(v) for v in values] == headers:
             continue
         row_dict = {}
         for i, header in enumerate(headers):

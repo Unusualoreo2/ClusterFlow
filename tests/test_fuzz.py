@@ -22,7 +22,8 @@ def call(text):
     try:
         out = a.analyze(text)
     except ValueError as e:
-        assert "missing" in str(e).lower(), "bad cell rejected the whole file: %r" % e
+        msg = str(e).lower()
+        assert "missing" in msg or "fixed-width" in msg, "bad cell rejected the whole file: %r" % e
         return None
     assert isinstance(out, dict) and "jobs" in out and "summary" in out
     return out
