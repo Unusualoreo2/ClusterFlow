@@ -67,6 +67,15 @@ ClusterFlow suggests how to improve your next job:
 - If time used is low, suggest a shorter time limit.
 - If a job ran out of memory or timed out, suggest more resources.
 
+## Share or print a report: `--html`
+
+Add `--html report.html` to write the whole report as one self-contained web page that you can open in any browser, print or email:
+
+```bash
+python3 dist/clusterflow.py jobs.txt --html report.html
+python3 dist/clusterflow.py jobs.txt --anonymise --html report.html   # safe to share outside your group
+```
+
 ## Try it first: `--demo`
 
 To see what a full report looks like before using your own jobs, run:

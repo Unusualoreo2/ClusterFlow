@@ -33,6 +33,7 @@ python3 clusterflow_cli.py                 # runs sacct for your jobs of the las
 python3 clusterflow_cli.py --demo           # see what a report looks like (made-up data)
 python3 clusterflow_cli.py --days 30 --top 10
 python3 clusterflow_cli.py jobs.txt --csv report.csv
+python3 clusterflow_cli.py jobs.txt --html report.html   # one file to open, print or email
 sacct -P ... | python3 clusterflow_cli.py -
 ```
 
