@@ -62,12 +62,10 @@ def test_scanner_catches_violations():
     bad = 'import subprocess\nsubprocess.run(["x"], capture_output=True, text=True)\nif (n := 3): pass\n'
     hits = [why for pat, why in NEWER_THAN_36 if re.search(pat, code_only(bad), re.M)]
     assert len(hits) == 3, hits
-    assert [w for p, w in NEWER_THAN_36 if re.search(p, code_only('match x:
-    pass
-'), re.M)]
-    assert not [w for p, w in NEWER_THAN_36 if re.search(p, code_only('for a, match in b:
-    pass
-'), re.M)]
+    match_stmt = "match x:\n    case 1:\n        pass\n"
+    match_var = "for a, match in b:\n    pass\n"
+    assert any(re.search(p, code_only(match_stmt), re.M) for p, w in NEWER_THAN_36)
+    assert not any(re.search(p, code_only(match_var), re.M) for p, w in NEWER_THAN_36)
     assert not [w for p, w in NEWER_THAN_36 if re.search(p, code_only('"""capture_output= in a docstring"""\n'), re.M)]
 
 
