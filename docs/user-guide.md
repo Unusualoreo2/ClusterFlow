@@ -91,6 +91,10 @@ python3 dist/clusterflow.py jobs.txt --anonymise --html report.html   # safe to 
 
 Run with `--all-users --split-by-user reports/` to write one HTML report per user into `reports/` (for example `reports/amurphy.html`). Each file covers only that user's jobs, so you can send every researcher their own report.
 
+## Show what improved: `--compare`
+
+Keep an export from before you changed your job settings (`sacct ... > before.txt`). Later run `python3 dist/clusterflow.py --compare before.txt` (or with a newer export file). The report ends with a "Change since before" section: CPU and memory efficiency, wasted core-hours per job, and out-of-memory and timed-out jobs, then and now.
+
 ## Try it first: `--demo`
 
 To see what a full report looks like before using your own jobs, run:

@@ -1192,6 +1192,8 @@ def report(result, top):
             pct(j["time_used"]), wasted))
         for rec in j["recommendations"]:
             lines.append("    - " + rec)
+    if result.get("comparison"):
+        lines += [""] + comparison_lines(result["comparison"])
     return "\n".join(lines)
 
 
@@ -1271,6 +1273,45 @@ pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; font-size: .85rem; }
 </html>""" % ("\n".join(head), '<table class="summary">%s</table>' % "\n".join(summary_rows) if summary_rows else "", fixes_html + details_html)
     
     return html_content
+
+
+def comparison_metrics(result):
+    """Headline numbers used to compare two periods."""
+    s = result["summary"]
+    n = s["job_count"]
+    waste = s["total_wasted_core_hours"]
+    return {
+        "job_count": n,
+        "avg_cpu_efficiency": s["avg_cpu_efficiency"],
+        "avg_memory_efficiency": s["avg_memory_efficiency"],
+        "wasted_core_hours_per_job": waste / n if (waste is not None and n) else None,
+        "oom_jobs": sum(1 for j in result["jobs"] if j["state"].startswith("OUT_OF_MEMORY")),
+        "timeout_jobs": sum(1 for j in result["jobs"] if j["state"].startswith("TIMEOUT")),
+    }
+
+
+def comparison_lines(comparison):
+    """'Change since before' section for the text report."""
+    b, a = comparison["before"], comparison["after"]
+    lines = ["Change since before (%s jobs -> %s jobs)" % (num(b["job_count"], 0), num(a["job_count"], 0))]
+
+    def row(label, value):
+        lines.append("  %-27s %s" % (label, value))
+
+    for label, key in (("Avg CPU efficiency:", "avg_cpu_efficiency"), ("Avg memory efficiency:", "avg_memory_efficiency")):
+        value = "%s -> %s" % (pct(b[key]), pct(a[key]))
+        if b[key] is not None and a[key] is not None:
+            points = round(a[key]) - round(b[key])
+            value += " (no change)" if points == 0 else " (%+d points)" % points
+        row(label, value)
+    bw, aw = b["wasted_core_hours_per_job"], a["wasted_core_hours_per_job"]
+    value = "%s -> %s" % ("-" if bw is None else "%.1f" % bw, "-" if aw is None else "%.1f" % aw)
+    if bw is not None and aw is not None and bw > 0:
+        value += " (%+d%%)" % round((aw - bw) / bw * 100)
+    row("Wasted core-hours per job:", value)
+    row("Out-of-memory jobs:", "%d -> %d" % (b["oom_jobs"], a["oom_jobs"]))
+    row("Timed-out jobs:", "%d -> %d" % (b["timeout_jobs"], a["timeout_jobs"]))
+    return lines
 
 
 def write_csv(result, path):
@@ -1375,6 +1416,7 @@ def main(argv=None):
     parser.add_argument("--html", help="also write a self-contained HTML report to PATH (open, print or email it)")
     parser.add_argument("--split-by-user", metavar="DIR",
                         help="also write one HTML report per user into DIR (to send each researcher their own)")
+    parser.add_argument("--compare", metavar="BEFORE", help="also analyse an earlier sacct export and show what changed since then")
     parser.add_argument("--anonymise", "--anonymize", action="store_true",
                         help="replace user names, job names and job IDs with neutral labels (safe to share)")
     parser.add_argument("--cpu-hour-cost", type=float, default=None,
@@ -1404,6 +1446,15 @@ def main(argv=None):
     cost = estimate_cost(result["summary"], args.cpu_hour_cost, args.gpu_hour_cost, args.currency)
     if cost:
         result["cost"] = cost
+    if args.compare:
+        try:
+            with open(args.compare, "r", encoding="utf-8-sig") as f:
+                before = analyze(f.read())
+        except OSError as e:
+            fail("cannot read %s: %s" % (args.compare, e))
+        except ValueError as e:
+            fail("%s: %s" % (args.compare, e))
+        result["comparison"] = {"before": comparison_metrics(before), "after": comparison_metrics(result)}
     if args.json:
         print(json.dumps(result, indent=2))
     else:
