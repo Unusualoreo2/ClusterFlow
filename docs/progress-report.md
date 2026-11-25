@@ -39,6 +39,14 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - Qwen's draft passed 76 of 79 tests but read data fields that don't exist. After two failed rounds, Claude rewrote the report functions.
 - 79 automated tests, all passing.
 
+## v0.5 (same day)
+
+- **Crash-proof:** a fuzz test feeds 400+ random and garbled exports through the engine. It found that one unreadable value (e.g. `inf`, `1-`, `123_[1-3]`) rejected the entire file in 217 of 416 cases. Unreadable, negative or infinite values are now treated as missing, and the rest of the file is still analysed.
+- **One-file install for clusters:** `scripts/build_bundle.py` builds `dist/hpcflow.py` (engine + CLI in one file, Python 3.7+, Linux line endings enforced by `.gitattributes`). Users copy a single file.
+- **Queue wait time:** from `sacct`'s Submit/Start columns. Per job, average and longest overall, and average per user/partition. Shown in the CLI ("Avg/Max queue wait") and the web app (card + column).
+- **Workflow fixes:** the automation now judges success by the tests plus a task-specific check (not by what Qwen says), rolls back a failed attempt before retrying, and stops Qwen when it loops on a passing test suite. Qwen reads files in 200-line chunks and can search, so it no longer runs out of memory on large files.
+- 521 automated tests, all passing.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.

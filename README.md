@@ -66,6 +66,10 @@ Per job, plus per-user and per-partition summaries (sorted by wasted core-hours)
 - State `OUT_OF_MEMORY` / `TIMEOUT` → say so and suggest more memory / more time
 - Jobs that are still running (`RUNNING`, `PENDING`) are skipped.
 
+## Queue wait time
+
+When the export includes `Submit` and `Start`, HPCFlow also shows how long jobs waited in the queue: the average and longest wait overall, the average per user and per partition, and the wait of each job. Jobs that never started have no wait time.
+
 ## Tests
 
 ```powershell

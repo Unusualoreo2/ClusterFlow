@@ -33,6 +33,10 @@ Colours of the CPU and memory bars:
 
 If your export includes the User and Partition columns, HPCFlow also shows two small tables: one row per user and one row per partition, with the number of jobs, average CPU and memory efficiency, and wasted core-hours. The rows with the most wasted core-hours come first, so you can see where resources are lost.
 
+## Queue wait
+
+The "Avg queue wait" card and the "Queue wait" column show how long jobs waited between submission and start (for example "45m" or "1d 02h"). Long waits often mean the job asked for more CPUs, memory or time than the scheduler could find quickly: requesting what the job really needs usually starts it sooner.
+
 ## Recommendations
 
 HPCFlow suggests how to improve your next job:

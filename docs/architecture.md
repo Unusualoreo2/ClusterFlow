@@ -50,6 +50,10 @@ When the header has `User` / `Partition`, `summary.by_user` / `summary.by_partit
 
 Jobs in states RUNNING, PENDING, REQUEUED, SUSPENDED and RESIZING are skipped. Repeated header lines (joined exports) are ignored.
 
+## Queue wait (v0.5)
+
+`wait_s = Start - Submit` in seconds (timestamps `YYYY-MM-DDTHH:MM:SS`; `Unknown`/`None` or Start before Submit give no value). Summary: `avg_wait_s`, `max_wait_s`; groups: `avg_wait_s`. Bad cell values anywhere are treated as missing, never as a reason to reject the file.
+
 ## Components
 
 - `backend/analysis.py`: pure Python standard library, no pandas. Parsing, metrics and recommendations. Fully unit-tested.
