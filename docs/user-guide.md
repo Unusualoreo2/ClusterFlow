@@ -1,78 +1,40 @@
 # HPCFlow User Guide
 
-Welcome to HPCFlow — a lightweight tool to analyze HPC job performance using Slurm logs and the Roofline model.
+As an HPC user, you can improve your job efficiency by analyzing sacct exports.
 
-## 📌 What It Does
+## Export jobs
 
-- Parses `sacct` output from Slurm.
-- Computes CPU utilization and memory bandwidth.
-- Applies Roofline logic to classify jobs as:
-  - Memory-bound
-  - Compute-bound
-  - Balanced
-- Recommends optimization strategies.
-
-## 🛠️ How to Use
-
-### 1. Prepare Your Data
-
-Run on your HPC cluster:
-```bash
-sacct -j <jobid> --format=JobID,Elapsed,MaxRSS,MaxCPU,MaxVMSize,AllocNodes --noheader > job.csv
+Run this command to export your jobs:
+```
+sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
 ```
 
-### 2. Upload the CSV
+Do not add `-X`: memory usage is recorded on the job steps, and HPCFlow merges them into each job automatically. Change `now-7days` to cover a different period.
 
-1. Open `frontend/index.html` in a browser.
-2. Click "Choose File" and select your `job.csv`.
-3. Click "Analyze Job".
+## Upload or paste
 
-### 3. Read the Insight
+You can upload a sacct file or paste its contents directly in the web interface.
 
-You’ll see:
-- Job ID
-- Elapsed time
-- CPU utilization
-- Memory bandwidth
-- **Insight**: e.g., "Memory-bound: optimize data layout"
+## Read the results
 
-## 🧠 Example
+Each job shows metrics and recommendations:
 
-Input (`job.csv`):
-```
-JobID,Elapsed,MaxRSS,MaxCPU,MaxVMSize,AllocNodes
-12345,01:05:30,4200,80.5,5000,1
-```
+- **CPU %**: share of the allocated CPU time your job really used.
+- **Memory %**: peak memory used as a share of the memory you requested.
+- **Time used %**: run time as a share of the time limit (shown with a neutral blue bar).
+- **Wasted core-h**: core-hours that were allocated but not used.
 
-Output:
-```
-Insight: Memory-bound: optimize data layout, reduce cache misses
-CPU Utilization: 80.5%
-Memory Bandwidth: 0.007 GB/s
-```
+Colours of the CPU and memory bars:
+- < 50%: red
+- 50-79%: amber
+- >= 80%: green
 
-## ⚙️ Technical Details
+## Recommendations
 
-- **Hardware Assumptions**:
-  - Peak FLOPS: 1e12
-  - Peak Memory Bandwidth: 100e9 GB/s
-- Adjust these in `analysis.py` for your cluster.
+HPCFlow suggests how to improve your next job:
 
-## 📌 Troubleshooting
-
-- **File not found?** Ensure it’s a `.csv`.
-- **Invalid format?** Check `sacct` output has correct headers.
-- **500 error?** Verify `MaxRSS` is in MB, `Elapsed` in HH:MM:SS.
-
-## 📈 Next Steps
-
-- Add real-time monitoring.
-- Integrate with Slurm via API.
-- Build a dashboard with charts.
-- Monetize via freemium SaaS.
-
----
-
-> This tool is open-source under MIT License. Built for researchers, students, and HPC engineers.
-
-© 2026 HPCFlow
+- If CPU efficiency is low (under 50%), request fewer CPUs (HPCFlow gives the number) or check that your code really runs in parallel.
+- If memory efficiency is low (under 50%), request less memory next time: HPCFlow gives the exact --mem value.
+- If memory efficiency is high (>90%), warn that the job is near its limit.
+- If time used is low, suggest a shorter time limit.
+- If a job ran out of memory or timed out, suggest more resources.

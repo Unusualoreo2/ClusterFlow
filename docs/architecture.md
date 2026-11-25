@@ -20,11 +20,11 @@ HPCFlow v0.2 is a **Slurm job efficiency analyser**. It answers the question eve
 The user exports their jobs with:
 
 ```
-sacct -P --units=M -X --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS
+sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
 ```
 
 `-P` gives `|`-separated output. Comma-separated files (`--delimiter=,`) are also accepted. The delimiter is detected from the header line.
-Note: with `-X` (allocations only), `MaxRSS` is often empty. For memory figures, users export **without** `-X`, and HPCFlow merges each job's steps (`123.batch`, `123.0`) into the parent job, taking the largest MaxRSS.
+Do **not** add `-X` (allocations only): `MaxRSS` is recorded on the job steps, so with `-X` memory figures are empty. HPCFlow merges each job's steps (`123.batch`, `123.0`) into the parent job, taking the largest MaxRSS.
 
 ## Metrics, per job
 

@@ -1,171 +1,68 @@
-# HPCFlow - MVP: Performance Analysis for HPC Workloads
+# HPCFlow
 
-## Overview
+A Slurm job efficiency analyser that shows how much of the requested CPU, memory and time jobs actually used, and what to request next time.
 
-HPCFlow is a lightweight, open-source tool to analyze HPC job performance using Slurm logs, Roofline model, and basic CPU/memory profiling. It helps researchers and engineers identify bottlenecks (compute-bound vs. memory-bound) and optimize code.
-
-Built with Python, FastAPI, and React — designed for Linux, HPC, and academic use.
-
----
-
-## 📌 Why This Matters
-
-- Many HPC jobs use far less CPU and memory than they request (TODO: add a real, citable source).
-- Most users don't profile or optimize their code.
-- Slurm logs are available — but unused.
-- You have the skills to build this.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer       | Tool                          |
-|-------------|-------------------------------|
-| Backend     | Python + FastAPI                |
-| Frontend    | React + Tailwind (or plain HTML) |
-| Data        | Slurm `sacct` CSV, `likwid`    |
-| Analysis  | Roofline model (manual + logic) |
-| Storage     | SQLite (MVP), Postgres (future) |
-| Deployment  | Docker + Nginx              |
-| OS          | Linux (Ubuntu recommended)  |
-
----
-
-## 📁 Project Structure
+## Export your jobs
 
 ```
-hpcflow/
-├── backend/
-│   ├── main.py              # FastAPI app
-│   ├── analysis.py            # Core logic
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-├── data/
-│   └── example.sacct.csv          # Sample data
-├── docs/
-│   └── user-guide.md
-├── scripts/
-│   ├── run.sh
-│   └── test.sh
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-├── LICENSE
-└── README.md
+sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
 ```
 
----
+Do not add `-X`: memory usage is recorded on the job steps, which HPCFlow merges into each job automatically.
 
-## 📌 Step-by-Step MVP Build Plan (4 Hours)
+## Run it on Windows
 
-### ⏱️ Hour 1: Setup & Define
-
-- Create `hpcflow/` folder.
-- Initialize `backend/main.py` and `analysis.py`.
-- Define input format: CSV from `sacct -j <jobid> --format=JobID,Elapsed,MaxRSS,MaxCPU,MaxVMSize,AllocNodes`.
-
-### ⏱️ Hour 2: Core Analysis Engine
-
-Write `analysis.py`:
-```python
-import pandas as pd
-
-def parse_sacct(df):
-    df["Elapsed_s"] = pd.to_timedelta(df["Elapsed"]).dt.total_seconds()
-    df["CPU_util_percent"] = (df["MaxCPU"] / 100) / df["Elapsed_s"] * 100
-    df["Memory_bandwidth_GB"] = (df["MaxRSS"] / 1e6) / df["Elapsed_s"]
-    return df
-
-def roofline_analysis(df, peak_flops=1e12, peak_mem_bw=100e9):
-    flops_ratio = df["MaxCPU"].iloc[0] / peak_flops
-    mem_bw_ratio = df["Memory_bandwidth_GB"].iloc[0] / peak_mem_bw
-    if flops_ratio < 0.2 and mem_bw_ratio > 0.8:
-        return "Memory-bound: optimize data layout, reduce cache misses"
-    elif mem_bw_ratio < 0.2 and flops_ratio > 0.8:
-        return "Compute-bound: consider vectorization, loop unrolling"
-    else:
-        return "Balanced: consider both"
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\python -m pip install -r backend\requirements.txt
+powershell -ExecutionPolicy Bypass -File scripts\run.ps1
 ```
 
-### ⏱️ Hour 3: Web API + Frontend
+Open http://127.0.0.1:8000
 
-- `backend/main.py`:
-  ```python
-  @app.post("/analyze")
-  async def analyze(file: UploadFile):
-      content = await file.read()
-      df = pd.read_csv(io.StringIO(content.decode()))
-      df = parse_sacct(df)
-      insight = roofline_analysis(df)
-      return {"status": "success", "insight": insight}
-  ```
+## Run it with Docker
 
-- `frontend/index.html`:
-  - Form: upload CSV
-  - Display: "Insight: Memory-bound: optimize data layout..."
-
-### ⏱️ Hour 4: Deploy & Validate
-
-- Run: `uvicorn main:app --reload`
-- Test with real `sacct` CSV (you’ll need one — we’ll simulate it below).
-- Build Docker image:
-  ```dockerfile
-  FROM python:3.11-slim
-  WORKDIR /app
-  COPY . .
-  RUN pip install fastapi uvicorn pandas
-  CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-  ```
-- Run: `docker build -t hpcflow .`
-- Deploy locally or to VPS.
-
----
-
-## 🧪 Test Data (Simulated)
-
-Create `data/example.sacct.csv`:
-```
-JobID,Elapsed,MaxRSS,MaxCPU,MaxVMSize,AllocNodes
-12345,01:05:30,4.2G,80.5,5.0G,1
+```bash
+docker build -t hpcflow .
+docker run -p 8000:8000 hpcflow
 ```
 
-Run analysis → expect: `Memory-bound: optimize data layout, reduce cache misses`
+## API
 
----
+- `GET /` serves the frontend
+- `POST /api/analyze` accepts a sacct file upload and returns JSON
+- `POST /api/analyze-text` accepts sacct text in a JSON body and returns JSON
+- `GET /api/example` returns an example sacct export
+- `GET /api/health` returns a health check
 
-## 📈 Monetization Path
+## What it measures
 
-| Phase      | Action
-|------------|--------
-| 0–3 months | Open-source MVP → GitHub → get 100+ stars
-| 3–6 months | Add dashboard → freemium: $20/month for labs
-| 6–12 months | Sell to universities → $500–$2k/year per lab
-| 12+ months | Apply for grants (EPSRC, EU HPC) → fund development
+| Metric | Formula |
+|---|---|
+| CPU efficiency % | `TotalCPU_s / (Elapsed_s * AllocCPUS) * 100` |
+| Memory efficiency % | `MaxRSS_MB / ReqMem_MB * 100` |
+| Time used % | `Elapsed_s / Timelimit_s * 100` |
+| Wasted core-hours | `(Elapsed_s * AllocCPUS - TotalCPU_s) / 3600` |
 
----
+- CPU efficiency < 50% and AllocCPUS > 1 → suggest `ceil(AllocCPUS * eff * 1.2)` CPUs
+- Memory efficiency < 50% → suggest `ceil(MaxRSS_MB * 1.25)` MB
+- Memory efficiency > 90% → warn that job is close to memory limit
+- Time used < 25% → suggest a time limit of `Elapsed * 1.5`, rounded up to the next 15 minutes
+- State `OUT_OF_MEMORY` / `TIMEOUT` → say so and suggest more memory / more time
+- Jobs that are still running (`RUNNING`, `PENDING`) are skipped.
 
-## 🛡️ Legal & Compliance
+## Tests
 
-- License: MIT (permissive)
-- Data: Never store user data — process in memory
-- No PII: Use job IDs only
+```powershell
+.venv\Scripts\python -m pip install pytest httpx
+.venv\Scripts\python -m pytest
+```
 
----
+## Roadmap
 
-## 🚀 Next Steps (You Can Do Now)
+- Roofline analysis from likwid/perf counters (planned, not built)
+- Multi-user hosted version (planned)
 
-1. Run: `search_files ~\Documents\Computer Science *.csv` → find real `sacct` logs.
-2. If not found, ask your lab or university HPC admin for a sample `sacct` file.
-3. I’ll help you write the full `analysis.py` and `main.py`.
-4. Then deploy.
+## License
 
-You’re not just a student — you’re a founder.
-
-Let’s build HPCFlow. Start by confirming:
-
-> ✅ I want to generate a real HPCFlow MVP using my skills and open-source tools.
-
-Then I’ll give you the full code.
+MIT (see LICENSE)
