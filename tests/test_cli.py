@@ -73,7 +73,7 @@ def test_no_group_tables_without_columns(tmp_path):
     f = tmp_path / "plain.txt"
     f.write_text("JobID|State|Elapsed|AllocCPUS|TotalCPU\n1|COMPLETED|01:00:00|2|01:00:00\n", encoding="utf-8")
     out = run(str(f)).stdout
-    assert "1 jobs analysed" in out
+    assert "1 job analysed" in out
     assert "By user" not in out and "By partition" not in out
 
 
