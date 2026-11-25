@@ -5,6 +5,8 @@ Slurm job efficiency analysis functions.
 import re
 from math import ceil
 
+SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
+
 
 def parse_duration(text):
     """
@@ -141,6 +143,9 @@ def read_sacct(text):
     result = []
     for line in lines[1:]:
         values = [v.strip() for v in line.split(delimiter)]
+        # Skip if this line's values match the header names exactly
+        if values == headers:
+            continue
         row_dict = {}
         for i, header in enumerate(headers):
             if i < len(values):
@@ -301,7 +306,7 @@ def analyze_job(job):
         recommendations.append(f"Peak memory is {memory_efficiency:.1f}% of the request: the job is close to its memory limit, request a little more to be safe.")
     
     # Time usage recommendation
-    if time_used is not None and time_used < 25:
+    if elapsed_s is not None and elapsed_s > 0 and time_used is not None and time_used < 25:
         # Calculate new time limit (elapsed * 1.5 rounded up to next 15 min)
         new_time_limit_s = elapsed_s * 1.5
         # Round up to next multiple of 900 seconds (15 minutes)
@@ -358,12 +363,12 @@ def analyze(text):
     # Merge steps
     jobs = merge_steps(rows)
     
-    # Skip running and pending jobs
+    # Skip running, pending, requeued, suspended, and resizing jobs
     skipped = 0
     filtered_jobs = []
     for job in jobs:
         state = job.get("State", "")
-        if state.startswith("RUNNING") or state.startswith("PENDING"):
+        if any(state.startswith(skip_state) for skip_state in SKIP_STATES):
             skipped += 1
         else:
             filtered_jobs.append(job)
