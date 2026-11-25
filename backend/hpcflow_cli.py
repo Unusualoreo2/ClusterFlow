@@ -84,7 +84,8 @@ def report(result, top):
         head,
         "Avg CPU efficiency:    %s" % pct(summary["avg_cpu_efficiency"]),
         "Avg memory efficiency: %s" % pct(summary["avg_memory_efficiency"]),
-        "Wasted core-hours:     %.1f" % (summary["total_wasted_core_hours"] or 0),
+        "Wasted core-hours:     %s" % ("-" if summary["total_wasted_core_hours"] is None
+                                        else "%.1f" % summary["total_wasted_core_hours"]),
     ]
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))

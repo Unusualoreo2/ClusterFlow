@@ -306,6 +306,10 @@ def merge_steps(rows):
         else:
             merged_job["MaxRSS"] = ""
         
+        # Slurm often marks the job FAILED while the step that died is OUT_OF_MEMORY: report the real cause
+        if not merged_job.get("State", "").startswith("COMPLETED") and any(
+                r.get("State", "").startswith("OUT_OF_MEMORY") for r in step_rows):
+            merged_job["State"] = "OUT_OF_MEMORY"
         merged_jobs.append(merged_job)
     
     return merged_jobs
@@ -728,6 +732,9 @@ def analyze(text):
         if job["memory_efficiency"] is not None:
             memory_efficiencies.append(job["memory_efficiency"])
     
+    if not any(j["wasted_core_hours"] is not None for j in analyzed_jobs):
+        total_wasted_core_hours = None  # unknown (e.g. no CPU data), not zero
+
     if cpu_efficiencies:
         avg_cpu_efficiency = sum(cpu_efficiencies) / len(cpu_efficiencies)
     
