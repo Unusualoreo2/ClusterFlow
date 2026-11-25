@@ -114,9 +114,10 @@ def report(result, top):
     jobs = sorted(result["jobs"], key=lambda j: -(j["wasted_core_hours"] or 0))[:max(0, top)]
     lines.append("Top %d jobs by wasted core-hours" % len(jobs))
     for j in jobs:
-        lines.append("  %s  %s  CPU %s  MEM %s  TIME %s  WASTED %.1f" % (
+        wasted = "-" if j["wasted_core_hours"] is None else "%.1f" % j["wasted_core_hours"]
+        lines.append("  %s  %s  CPU %s  MEM %s  TIME %s  WASTED %s" % (
             j["job_id"], j["name"], pct(j["cpu_efficiency"]), pct(j["memory_efficiency"]),
-            pct(j["time_used"]), j["wasted_core_hours"] or 0))
+            pct(j["time_used"]), wasted))
         for rec in j["recommendations"]:
             lines.append("    - " + rec)
     return "\n".join(lines)
