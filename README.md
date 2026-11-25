@@ -29,17 +29,17 @@ Open http://127.0.0.1:8000
 Copy the single file `dist/clusterflow.py` to the cluster (Python 3.6+, standard library only; tested on real 3.6.8 and 3.8.10), then on a login node:
 
 ```bash
-python3 clusterflow_cli.py                 # runs sacct for your jobs of the last 7 days
-python3 clusterflow_cli.py --demo           # see what a report looks like (made-up data)
-python3 clusterflow_cli.py --days 30 --top 10
-python3 clusterflow_cli.py jobs.txt --csv report.csv
-python3 clusterflow_cli.py jobs.txt --html report.html   # one file to open, print or email
-python3 clusterflow_cli.py --all-users --split-by-user reports/   # admins: one HTML report per user
-python3 clusterflow_cli.py --days 30 --compare last_quarter.txt   # what improved since an earlier export
-sacct -P ... | python3 clusterflow_cli.py -
+python3 clusterflow.py                 # runs sacct for your jobs of the last 7 days
+python3 clusterflow.py --demo           # see what a report looks like (made-up data)
+python3 clusterflow.py --days 30 --top 10
+python3 clusterflow.py jobs.txt --csv report.csv
+python3 clusterflow.py jobs.txt --html report.html   # one file to open, print or email
+python3 clusterflow.py --all-users --split-by-user reports/   # admins: one HTML report per user
+python3 clusterflow.py --days 30 --compare last_quarter.txt   # what improved since an earlier export
+sacct -P ... | python3 clusterflow.py -
 ```
 
-Options: `--all-users` (admins: adds `-a` to sacct), `--json` (machine-readable output). No data leaves the cluster.
+Other options: `--all-users` (admins: adds `-a` to sacct), `--anonymise` (no names, safe to share), `--json` (machine-readable output), `--top N`, `--version`. Run `python3 clusterflow.py --help` for all of them. No data leaves the cluster.
 
 ## Run it with Docker
 
@@ -69,6 +69,7 @@ The web app has a "Price the waste" box for the same. Wasted CPU time = allocate
 - `GET /` serves the frontend
 - `POST /api/analyze` accepts a sacct file upload and returns JSON
 - `POST /api/analyze-text` accepts sacct text in a JSON body and returns JSON
+- `POST /api/report-html` accepts sacct text in a JSON body and returns the self-contained HTML report
 - `GET /api/example` returns the built-in demo sample (the same data as `--demo`)
 - `GET /api/health` returns a health check
 
