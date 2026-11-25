@@ -157,6 +157,12 @@
             display: none;
         }
 
+        .jobs-note {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin: 8px 0;
+        }
+
         .groups-table {
             width: auto;
             min-width: 50%;
@@ -338,6 +344,8 @@
         </div>
 
         <div id="groupsSection"></div>
+        <div id="arraysSection"></div>
+        <p id="jobsNote" class="jobs-note" style="display:none"></p>
 
         <table id="resultsTable">
             <thead>
@@ -519,6 +527,43 @@
         }
 
         // Small table of grouped results (only shown when the list is not empty)
+        // Job arrays: one row per array, recommendations underneath (built with textContent only)
+        function renderArrays(arrays) {
+            const section = document.getElementById('arraysSection');
+            section.textContent = '';
+            if (!arrays.length) return;
+            const heading = document.createElement('h3');
+            heading.textContent = 'Job arrays';
+            section.appendChild(heading);
+            const table = document.createElement('table');
+            table.className = 'groups-table';
+            const head = table.createTHead().insertRow();
+            ['Array', 'Name', 'Tasks', 'States', 'Avg CPU %', 'Avg memory %', 'Wasted core-h'].forEach(t => {
+                const th = document.createElement('th');
+                th.textContent = t;
+                head.appendChild(th);
+            });
+            const body = table.createTBody();
+            const pctText = v => (v === null || v === undefined) ? '–' : Math.round(v) + '%';
+            arrays.forEach(r => {
+                const states = Object.keys(r.states).sort((a, b) => r.states[b] - r.states[a]).map(s => r.states[s] + ' ' + s).join(', ');
+                const row = body.insertRow();
+                [r.array_id, r.name, r.task_count, states, pctText(r.avg_cpu_efficiency), pctText(r.avg_memory_efficiency),
+                 (r.wasted_core_hours || 0).toFixed(1)].forEach(v => { row.insertCell().textContent = String(v); });
+                row.cells[4].style.color = effColor(r.avg_cpu_efficiency);
+                row.cells[5].style.color = effColor(r.avg_memory_efficiency);
+                if (r.recommendations.length) {
+                    const recRow = body.insertRow();
+                    const cell = recRow.insertCell();
+                    cell.colSpan = 7;
+                    const ul = document.createElement('ul');
+                    r.recommendations.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+                    cell.appendChild(ul);
+                }
+            });
+            section.appendChild(table);
+        }
+
         function renderGroups(title, label, groups) {
             if (!groups.length) return;
             const heading = document.createElement('h3');
@@ -572,12 +617,25 @@
             groupsSection.textContent = '';
             renderGroups('By user', 'User', data.summary.by_user || []);
             renderGroups('By partition', 'Partition', data.summary.by_partition || []);
+            renderArrays(data.summary.arrays || []);
+
+            // Show at most MAX_ROWS jobs, most wasteful first (the CSV download still has all jobs)
+            const MAX_ROWS = 200;
+            const jobsSorted = data.jobs.slice().sort((a, b) => (b.wasted_core_hours || 0) - (a.wasted_core_hours || 0));
+            const jobsShown = jobsSorted.slice(0, MAX_ROWS);
+            const jobsNote = document.getElementById('jobsNote');
+            if (data.jobs.length > MAX_ROWS) {
+                jobsNote.textContent = 'Showing the ' + MAX_ROWS + ' jobs with the most wasted core-hours out of ' + data.jobs.length + '. Download the CSV for all jobs.';
+                jobsNote.style.display = '';
+            } else {
+                jobsNote.style.display = 'none';
+            }
 
             // Clear table body
             tableBody.innerHTML = '';
 
             // Populate table rows
-            data.jobs.forEach(job => {
+            jobsShown.forEach(job => {
                 const row = document.createElement('tr');
 
                 // Job ID
