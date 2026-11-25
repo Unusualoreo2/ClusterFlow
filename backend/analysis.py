@@ -3,6 +3,7 @@ Slurm job efficiency analysis functions.
 """
 
 import re
+from datetime import datetime
 from math import ceil
 
 SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
@@ -48,6 +49,19 @@ def _safe(fn, *args):
         return _finite(fn(*args))
     except (ValueError, TypeError, OverflowError, IndexError, AttributeError):
         return None
+
+
+def parse_timestamp(text):
+    """sacct timestamp 'YYYY-MM-DDTHH:MM:SS' (or with a space) -> datetime, or None ('Unknown', 'None', '', invalid)."""
+    try:
+        return datetime.strptime(text, "%Y-%m-%dT%H:%M:%S")
+    except (ValueError, TypeError):
+        pass
+    try:
+        return datetime.strptime(text, "%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        pass
+    return None
 
 
 def parse_duration(text):
@@ -344,6 +358,21 @@ def analyze_job(job):
     
     if elapsed_s is not None and total_cpu_s is not None:
         wasted_core_hours = max(0, (elapsed_s * alloc_cpus - total_cpu_s) / 3600)
+
+    # Calculate wait time in seconds
+    submit_str = job.get("Submit", "")
+    start_str = job.get("Start", "")
+    wait_s = None
+    if submit_str and start_str and submit_str != "Unknown" and start_str != "None":
+        submit_dt = parse_timestamp(submit_str)
+        start_dt = parse_timestamp(start_str)
+        if submit_dt and start_dt:
+            # Only calculate wait time if start is after or equal to submit
+            diff = (start_dt - submit_dt).total_seconds()
+            if diff >= 0:
+                wait_s = diff
+
+    # Generate recommendations
     
     # Generate recommendations
     recommendations = []
@@ -400,6 +429,7 @@ def analyze_job(job):
         "memory_efficiency": memory_efficiency,
         "time_used": time_used,
         "wasted_core_hours": wasted_core_hours,
+        "wait_s": wait_s,
         "recommendations": recommendations,
         "user": job.get("User", "") or "",
         "partition": job.get("Partition", "") or ""
@@ -427,8 +457,10 @@ def summarize_groups(results, key):
                 "avg_cpu_efficiency": None,
                 "avg_memory_efficiency": None,
                 "wasted_core_hours": 0.0,
+                "avg_wait_s": None,
                 "_cpu_n": 0,
-                "_mem_n": 0
+                "_mem_n": 0,
+                "_wait_n": 0
             }
         group = groups[name]
         group["job_count"] += 1
@@ -455,17 +487,25 @@ def summarize_groups(results, key):
             else:
                 group["avg_memory_efficiency"] += mem_eff
             group["_mem_n"] += 1
-    
+
+        wait_s = job.get("wait_s")
+        if wait_s is not None:
+            group["avg_wait_s"] = (group["avg_wait_s"] or 0) + wait_s
+            group["_wait_n"] += 1
+
     # Convert sums to averages where applicable
     for group in groups.values():
         if group["avg_cpu_efficiency"] is not None:
             group["avg_cpu_efficiency"] /= group["_cpu_n"]
         if group["avg_memory_efficiency"] is not None:
             group["avg_memory_efficiency"] /= group["_mem_n"]
-        
+        if group["avg_wait_s"] is not None:
+            group["avg_wait_s"] /= group["_wait_n"]
+
         # Remove helper keys
         del group["_cpu_n"]
         del group["_mem_n"]
+        del group["_wait_n"]
     
     # Convert to list and sort
     result = list(groups.values())
@@ -541,7 +581,11 @@ def analyze(text):
     
     if memory_efficiencies:
         avg_memory_efficiency = sum(memory_efficiencies) / len(memory_efficiencies)
-    
+
+    waits = [j["wait_s"] for j in analyzed_jobs if j["wait_s"] is not None]
+    avg_wait_s = sum(waits) / len(waits) if waits else None
+    max_wait_s = max(waits) if waits else None
+
     # Get header columns from rows to check for User and Partition
     headers = set()
     if rows:
@@ -565,6 +609,8 @@ def analyze(text):
             "avg_cpu_efficiency": avg_cpu_efficiency,
             "avg_memory_efficiency": avg_memory_efficiency,
             "total_wasted_core_hours": total_wasted_core_hours,
+            "avg_wait_s": avg_wait_s,
+            "max_wait_s": max_wait_s,
             "by_user": by_user,
             "by_partition": by_partition
         }

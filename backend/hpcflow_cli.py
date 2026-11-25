@@ -39,6 +39,20 @@ def fail(msg):
     print("hpcflow: " + msg, file=sys.stderr)
     sys.exit(2)
 
+def fmt_wait(s):
+    """Seconds -> short human text: None '-', under 60 s '<1m', '30m', '1h 05m', '1d 02h'."""
+    if s is None:
+        return "-"
+    s = int(s)
+    if s < 60:
+        return "<1m"
+    if s < 3600:
+        return "%dm" % (s // 60)
+    if s < 86400:
+        return "%dh %02dm" % (s // 3600, (s % 3600) // 60)
+    return "%dd %02dh" % (s // 86400, (s % 86400) // 3600)
+
+
 def pct(v):
     return "-" if v is None else "%d%%" % round(v)
 
@@ -65,8 +79,11 @@ def report(result, top):
         "Avg CPU efficiency:    %s" % pct(summary["avg_cpu_efficiency"]),
         "Avg memory efficiency: %s" % pct(summary["avg_memory_efficiency"]),
         "Wasted core-hours:     %.1f" % (summary["total_wasted_core_hours"] or 0),
-        "",
     ]
+    if summary.get("avg_wait_s") is not None:
+        lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
+        lines.append("Max queue wait:        %s" % fmt_wait(summary["max_wait_s"]))
+    lines.append("")
     if summary.get("by_user"):
         lines += _group_table("By user", summary["by_user"])
     if summary.get("by_partition"):
