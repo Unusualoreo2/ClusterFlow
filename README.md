@@ -43,7 +43,7 @@ Other options: `--all-users` (admins: adds `-a` to sacct), `--anonymise` (no nam
 
 ## Run it with Docker
 
-Not yet tested (Docker was not available on the development machine).
+Tested with Docker Desktop 29 (WSL 2) on Windows 11: the image serves the web app on port 8000 and runs as a non-root user. `tests/test_docker.py` builds and checks it whenever Docker is running.
 
 ```bash
 docker build -t clusterflow .

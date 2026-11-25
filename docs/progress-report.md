@@ -112,7 +112,7 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster (Kelvin2 access requested). So far: made-up samples and a published real dataset (IN2P3).
-- Build and run the Docker image (Docker needs a Windows admin install, which this PC cannot do).
+- Docker: done in v0.20 (image built and tested automatically when Docker is running).
 - Turn on GitHub Actions CI (needs the owner to approve the GitHub `workflow` permission).
 - Typical-job advice checked on real data with job names (IN2P3 has none). Roadmap: a Roofline prototype from likwid data; a hosted multi-user version.
 

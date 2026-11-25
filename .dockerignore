@@ -1,0 +1,12 @@
+.git
+.venv
+.claude
+**/__pycache__
+**/*.pyc
+.pytest_cache
+dist
+pilot
+tests
+tools
+docs
+*.log
