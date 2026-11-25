@@ -61,7 +61,7 @@ def test_array_failures_reported_and_excluded_from_advice():
     recs = " ".join(r["recommendations"])
     assert "1 of 4 tasks ran out of memory" in recs
     assert "1 of 4 tasks hit the time limit" in recs
-    assert "--mem=2500M" in recs           # peak over COMPLETED tasks only (2000M), not the OOM task
+    assert "--mem=2500M" not in recs and "(e.g. --mem=24576M)" in recs  # v0.24: a task ran out, never lower memory
     assert "--time=" not in recs           # a task hit the limit: never suggest less time
 
 

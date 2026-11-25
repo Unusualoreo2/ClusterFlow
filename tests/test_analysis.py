@@ -134,7 +134,7 @@ def test_oom_and_timeout_states():
 def test_oom_suggests_concrete_memory():
     r = a.analyze_job(job(State="OUT_OF_MEMORY", ReqMem="8G", MaxRSS="8190M"))
     oom = r["recommendations"][0]
-    assert "--mem=12285M" in oom  # ceil(8190 * 1.5)
+    assert "--mem=12288M" in oom  # v0.24: ceil(max(MaxRSS 8190, request 8192) * 1.5)
     assert "<" not in oom and "ceil" not in oom and oom.count("(") == oom.count(")")
 
 

@@ -386,7 +386,13 @@ def summarize_profiles(results, min_runs=3):
     p90 busy cores x 1.2, p95 peak memory x 1.2, p95 run time x 1.5 (rounded up to 15 min).
     Compared with the median request. Sorted by wasted core-hours (desc), then user, name."""
     groups = {}
+    oom_keys, timeout_keys = set(), set()
     for j in results:
+        key = (j.get("user", ""), j.get("name"))
+        if j["state"].startswith("OUT_OF_MEMORY"):
+            oom_keys.add(key)
+        if j["state"].startswith("TIMEOUT"):
+            timeout_keys.add(key)
         if not j.get("name") or not j["state"].startswith("COMPLETED"):
             continue
         groups.setdefault((j.get("user", ""), j["name"]), []).append(j)
@@ -415,11 +421,11 @@ def summarize_profiles(results, min_runs=3):
             recs.append("Across %d runs, at most %.1f cores were busy in 90%% of runs: request --cpus-per-task=%d "
                         "instead of %d." % (n, p_cores, cpus_need, cpus_req))
             sbatch.append("#SBATCH --cpus-per-task=%d" % cpus_need)
-        if mem_need is not None and mem_req is not None and mem_req - mem_need >= 1024:
+        if (user, name) not in oom_keys and mem_need is not None and mem_req is not None and mem_req - mem_need >= 1024:
             recs.append("Across %d runs, peak memory was at most %dM in 95%% of runs: request --mem=%dM instead of "
                         "%dM." % (n, round(p_rss), mem_need, round(mem_req)))
             sbatch.append("#SBATCH --mem=%dM" % mem_need)
-        if time_need is not None and time_req is not None and time_need < 0.5 * time_req:
+        if (user, name) not in timeout_keys and time_need is not None and time_req is not None and time_need < 0.5 * time_req:
             recs.append("Across %d runs, 95%% finished within %s: request --time=%s instead of %s."
                         % (n, _hms(p_el), _slurm_time(time_need), _hms(time_req)))
             sbatch.append("#SBATCH --time=%s" % _slurm_time(time_need))
@@ -556,7 +562,7 @@ def analyze_job(job):
     if state.startswith("OUT_OF_MEMORY"):
         rec = "Job ran out of memory: request more memory"
         if max_rss_mb is not None:
-            mem_req = ceil(max_rss_mb * 1.5)
+            mem_req = ceil(max(max_rss_mb, req_mem_mb or 0) * 1.5)
             rec += f" (e.g. --mem={mem_req}M)."
         else:
             rec += "."
@@ -804,13 +810,19 @@ def summarize_arrays(results):
         # Recommendations
         recs = []
         if oom:
-            recs.append("%d of %d tasks ran out of memory: request more memory for this array." % (oom, n))
+            top = max([t["max_rss_mb"] for t in tasks if t["max_rss_mb"] is not None]
+                      + [t["req_mem_mb"] for t in tasks if t["req_mem_mb"] is not None] or [0])
+            if top:
+                recs.append("%d of %d tasks ran out of memory: request more memory for this array (e.g. --mem=%dM)."
+                            % (oom, n, ceil(top * 1.5)))
+            else:
+                recs.append("%d of %d tasks ran out of memory: request more memory for this array." % (oom, n))
         if timeouts:
             recs.append("%d of %d tasks hit the time limit: request more time or add checkpointing." % (timeouts, n))
         if avg_cpu is not None and avg_cpu < 50 and cpus > 1:
             new_cpus = max(1, ceil(cpus * avg_cpu / 100 * 1.2))
             recs.append("Average CPU efficiency over %d tasks is %.1f%%: request --cpus-per-task=%d instead of %d." % (nd, avg_cpu, new_cpus, cpus))
-        if peak is not None and req_mb is not None and req_mb - ceil(peak * 1.25) >= 1024:
+        if not oom and peak is not None and req_mb is not None and req_mb - ceil(peak * 1.25) >= 1024:
             recs.append("Peak memory over %d tasks is %dM of %dM requested: request --mem=%dM for this array." % (nd, round(peak), round(req_mb), ceil(peak * 1.25)))
         if not timeouts:
             pairs = [(t["elapsed_s"], t["time_used"]) for t in done if t["elapsed_s"] and t["time_used"] is not None]

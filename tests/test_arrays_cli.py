@@ -25,7 +25,9 @@ def test_array_section(tmp_path):
     line = [l for l in out.splitlines() if l.strip().startswith("500 ")][0]
     assert "sweep" in line and "9 tasks" in line and "8 COMPLETED" in line and "1 OUT_OF_MEMORY" in line
     assert "CPU 25%" in line and "WASTED" in line
-    assert "1 of 9 tasks ran out of memory" in out and "--mem=2500M for this array" in out
+    # v0.24: a task ran out of memory, so the array is never told to lower memory (it used to say --mem=2500M)
+    assert "1 of 9 tasks ran out of memory: request more memory for this array (e.g. --mem=24576M)." in out
+    assert "Peak memory over" not in out
     # the array section comes before the top-jobs list
     assert out.index("Job arrays (1)") < out.index("Top ")
 
