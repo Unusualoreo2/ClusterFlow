@@ -97,12 +97,24 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 - Open: 6 jobs in the IN2P3 month show impossible >150% efficiencies (likely dataset quirks; not investigated). IN2P3 has no job names, so typical-job advice was tested on constructed data only.
 - 627 automated tests, all passing; backed up to GitHub automatically.
 
+## v0.13-v0.19: demo, sharing, team features (night of 25 Nov)
+
+- **Renamed to ClusterFlow** (code, docs, GitHub repo `Unusualoreo2/ClusterFlow`, local folder copy); impossible CPU efficiencies from Slurm accounting artefacts are ignored with a note.
+- **One-command demo:** `--demo` analyses a built-in made-up sample that shows every kind of finding; the web page's demo button uses the same data. Building it exposed a privacy bug: `--anonymise` left names in typical-job advice (fixed).
+- **Reports to share:** `--html` writes one self-contained, printable page (escaped, readable in dark mode, names the version); the web app can download it too.
+- **Ready-to-paste advice:** typical jobs get `#SBATCH` lines to copy into a job script.
+- **For HPC teams:** `--split-by-user DIR` writes one report per researcher (383 reports for the real IN2P3 month in under 3 minutes), and `--compare BEFORE` shows what improved between two periods (efficiency, waste per job, out-of-memory and timed-out jobs).
+- **Old clusters:** the single-file tool now runs in the test suite on real Python 3.6.8 and 3.8.10 (identical output), not just a code scan.
+- **Polish:** `--version`, readable `--help` with examples, singular wording, thousands separators; a hands-on guide `docs/try-it-yourself.md` with before/after sample files.
+- **Real data re-checked at v0.19:** the IN2P3 December 2024 month (2,374,219 jobs) gives the same results as v0.12: 69% CPU, 33% memory, 5,072,809 wasted core-hours.
+- **Process:** Qwen built most features; the architect took over each time Qwen failed twice (4 times in this stretch) and caught in review a per-user slowdown (28 s to 1.4 s for 200 users) and a dark-mode readability bug. The Qwen worker can no longer edit tests.
+
 ## Not yet done
 
-- Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.
-- Build and run the Docker image (Docker is not installed on this PC).
-- Publish the code on GitHub.
-- Roadmap: job history and trends, per-user and per-partition summaries, then a Roofline prototype from likwid data.
+- Test with real `sacct` exports from a university cluster (Kelvin2 access requested). So far: made-up samples and a published real dataset (IN2P3).
+- Build and run the Docker image (Docker needs a Windows admin install, which this PC cannot do).
+- Turn on GitHub Actions CI (needs the owner to approve the GitHub `workflow` permission).
+- Typical-job advice checked on real data with job names (IN2P3 has none). Roadmap: a Roofline prototype from likwid data; a hosted multi-user version.
 
 ## How to run
 
