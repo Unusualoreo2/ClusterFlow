@@ -3,7 +3,7 @@ Slurm job efficiency analysis functions.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import ceil
 
 EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,"
@@ -333,6 +333,32 @@ def merge_steps(rows):
     return merged_jobs
 
 
+def _start_date(job):
+    """Job start date 'YYYY-MM-DD' (falls back to Submit if Start is Unknown/None), or None."""
+    ts = parse_timestamp(job.get("Start")) or parse_timestamp(job.get("Submit"))
+    return ts.date().isoformat() if ts else None
+
+
+def summarize_trend(results):
+    """Group jobs by day (when the export spans 14 days or less) or by week (named after its Monday), oldest first."""
+    dated = [j for j in results if j.get("start_date")]
+    if not dated:
+        return {"period": None, "rows": []}
+    days = sorted(datetime.strptime(j["start_date"], "%Y-%m-%d").date() for j in dated)
+    period = "day" if (days[-1] - days[0]).days <= 14 else "week"
+
+    def key(day_text):
+        if period == "day":
+            return day_text
+        d = datetime.strptime(day_text, "%Y-%m-%d").date()
+        return (d - timedelta(days=d.weekday())).isoformat()
+
+    tagged = [dict(j, period=key(j["start_date"])) for j in dated]
+    rows = summarize_groups(tagged, "period")
+    rows.sort(key=lambda r: r["name"])
+    return {"period": period, "rows": rows}
+
+
 def analyze_job(job):
     """
     Analyze a single job and generate metrics and recommendations.
@@ -474,6 +500,7 @@ def analyze_job(job):
         "alloc_gpus": alloc_gpus,
         "gpu_hours": alloc_gpus * elapsed_s / 3600 if alloc_gpus and elapsed_s is not None else None,
         "gpu_utilization": gpu_util,
+        "start_date": _start_date(job),
         "recommendations": recommendations,
         "user": job.get("User", "") or "",
         "partition": job.get("Partition", "") or ""
@@ -817,6 +844,7 @@ def analyze(text):
             "gpu_job_count": len(gpu_jobs),
             "total_gpu_hours": total_gpu_hours,
             "avg_gpu_utilization": avg_gpu_utilization,
+            "trend": summarize_trend(analyzed_jobs),
             "arrays": summarize_arrays(analyzed_jobs),
             "by_user": by_user,
             "by_partition": by_partition
