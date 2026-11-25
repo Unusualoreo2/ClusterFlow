@@ -24,7 +24,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | ~v0.13, **631 tests, all passing** |
+| Version | v0.14, **663 tests, all passing** |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -37,6 +37,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 - Qwen runs locally: llama.cpp router at `http://127.0.0.1:8080/v1`, model `qwen3-coder-30b` (RX 9060 XT GPU).
 - **Hand a task to Qwen:** write a task file, then `bash tools/qwen/qwen-task.sh <task.md> [max_tokens] [check-command]`. It runs Qwen with file tools limited to the project, then checks all tests plus the task's own check; on failure it rolls back and retries once. See `tools/qwen/README.md`.
 - **Commit only with** `bash tools/safe-commit.sh "message"`: it rebuilds the bundle and refuses to commit unless every test passes.
+- **Qwen limits:** its context is 32k tokens, so tell it exactly which lines to read and give ready-made code blocks; keep task files outside the repo (the scratchpad), not in `tools/`.
 - **Qwen tips learned:** give exact `replace_text` snippets with unique anchors; for doc edits, make the new text end with the original heading (Qwen tends to delete headings); always review its diff (it sometimes invents field names, duplicates code or picks a simpler design); keep each task small.
 
 ## 4. What was built (25 Nov 2026, chronological)
@@ -56,6 +57,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.11 | Cost of waste (CLI + web) |
 | v0.12 | Published-dataset format; **full IN2P3 Dec 2024 month: 2.37M real jobs in ~72 s**; readable CLI report ("What to fix first"); typical-job advice |
 | v0.13 | Impossible CPU efficiency (Slurm accounting artefact on very short jobs) ignored with a note; project renamed ClusterFlow |
+| v0.14 | One-command demo: `clusterflow --demo` (built-in made-up sample showing every finding; also the web page's demo button); fixed `--anonymise` leaking names in typical-job advice |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -74,7 +76,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 ## 7. Open items and next candidates
 
-- One-command CIUK demo (bundled sample data, readable report).
+- CIUK demo: done in v0.14 (`python dist/clusterflow.py --demo`); a printable one-page handout could follow.
 - Typical-job advice tested only on constructed data (IN2P3 has no job names).
 - Docker image never built (README marks it untested).
 - Python 3.6/3.8 compatibility checked by scanning only; the parked CI would run 3.8 for real.
