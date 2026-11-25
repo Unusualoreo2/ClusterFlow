@@ -5,7 +5,7 @@ A Slurm job efficiency analyser that shows how much of the requested CPU, memory
 ## Export your jobs
 
 ```
-sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
+sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt
 ```
 
 Do not add `-X`: memory usage is recorded on the job steps, which HPCFlow merges into each job automatically.
