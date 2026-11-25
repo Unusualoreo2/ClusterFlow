@@ -871,6 +871,8 @@ def report(result, top):
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
         lines.append("Max queue wait:        %s" % fmt_wait(summary["max_wait_s"]))
+    for w in result.get("warnings", []):
+        lines.append("Note: " + w)
     lines.append("")
     if summary.get("by_user"):
         lines += _group_table("By user", summary["by_user"])
