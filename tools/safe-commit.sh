@@ -11,7 +11,7 @@ if ! echo "$result" | grep -q "passed" || echo "$result" | grep -qE "failed|erro
   exit 1
 fi
 git add -A
-git -c user.name="HPCFlow" -c user.email="hpcflow@localhost" commit -q -m "$1
+git -c user.name="ClusterFlow" -c user.email="clusterflow@localhost" commit -q -m "$1
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>" 2>&1 | grep -v "LF will"
 sleep 3

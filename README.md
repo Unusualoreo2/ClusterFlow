@@ -1,4 +1,4 @@
-# HPCFlow
+# ClusterFlow
 
 A Slurm job efficiency analyser that shows how much of the requested CPU, memory and time jobs actually used, and what to request next time.
 
@@ -8,11 +8,11 @@ A Slurm job efficiency analyser that shows how much of the requested CPU, memory
 sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt
 ```
 
-Do not add `-X`: memory usage is recorded on the job steps, which HPCFlow merges into each job automatically.
+Do not add `-X`: memory usage is recorded on the job steps, which ClusterFlow merges into each job automatically.
 
 ## Which exports work
 
-`|`, comma or tab separated `sacct` output with at least `JobID` and `State`. The more of the columns above you include, the more HPCFlow can tell you: any figure it cannot compute is listed as a note instead of being guessed. Output from `sacct` without `-P` (space-padded columns) is not supported.
+`|`, comma or tab separated `sacct` output with at least `JobID` and `State`. The more of the columns above you include, the more ClusterFlow can tell you: any figure it cannot compute is listed as a note instead of being guessed. Output from `sacct` without `-P` (space-padded columns) is not supported.
 
 ## Run it on Windows
 
@@ -26,13 +26,13 @@ Open http://127.0.0.1:8000
 
 ## Run it on the cluster (command line)
 
-Copy `backend/analysis.py` and `backend/hpcflow_cli.py` to the cluster (Python 3.7+, standard library only), then on a login node:
+Copy `backend/analysis.py` and `backend/clusterflow_cli.py` to the cluster (Python 3.7+, standard library only), then on a login node:
 
 ```bash
-python3 hpcflow_cli.py                 # runs sacct for your jobs of the last 7 days
-python3 hpcflow_cli.py --days 30 --top 10
-python3 hpcflow_cli.py jobs.txt --csv report.csv
-sacct -P ... | python3 hpcflow_cli.py -
+python3 clusterflow_cli.py                 # runs sacct for your jobs of the last 7 days
+python3 clusterflow_cli.py --days 30 --top 10
+python3 clusterflow_cli.py jobs.txt --csv report.csv
+sacct -P ... | python3 clusterflow_cli.py -
 ```
 
 Options: `--all-users` (admins: adds `-a` to sacct), `--json` (machine-readable output). No data leaves the cluster.
@@ -42,20 +42,20 @@ Options: `--all-users` (admins: adds `-a` to sacct), `--json` (machine-readable 
 Not yet tested (Docker was not available on the development machine).
 
 ```bash
-docker build -t hpcflow .
-docker run -p 8000:8000 hpcflow
+docker build -t clusterflow .
+docker run -p 8000:8000 clusterflow
 ```
 
 ## GPU jobs
 
-If your export includes `AllocTRES` (and, on clusters with GPU accounting, `TRESUsageInAve`), HPCFlow reports GPU-hours, average GPU utilisation and advice for idle GPUs, overall, per user and per job.
+If your export includes `AllocTRES` (and, on clusters with GPU accounting, `TRESUsageInAve`), ClusterFlow reports GPU-hours, average GPU utilisation and advice for idle GPUs, overall, per user and per job.
 
 ## Cost of waste
 
-HPCFlow never guesses prices. Give it your centre's rates and it prices the waste:
+ClusterFlow never guesses prices. Give it your centre's rates and it prices the waste:
 
 ```bash
-python3 hpcflow.py --cpu-hour-cost 0.02 --gpu-hour-cost 1.50 --currency £
+python3 clusterflow.py --cpu-hour-cost 0.02 --gpu-hour-cost 1.50 --currency £
 ```
 
 The web app has a "Price the waste" box for the same. Wasted CPU time = allocated minus used core-hours; idle GPU time = GPU-hours x (100% - GPU utilisation).
@@ -88,7 +88,7 @@ Per job, plus per-user and per-partition summaries (sorted by wasted core-hours)
 
 ## Queue wait time
 
-When the export includes `Submit` and `Start`, HPCFlow also shows how long jobs waited in the queue: the average and longest wait overall, the average per user and per partition, and the wait of each job. Jobs that never started have no wait time.
+When the export includes `Submit` and `Start`, ClusterFlow also shows how long jobs waited in the queue: the average and longest wait overall, the average per user and per partition, and the wait of each job. Jobs that never started have no wait time.
 
 ## Tests
 

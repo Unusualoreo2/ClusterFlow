@@ -1,4 +1,4 @@
-"""Acceptance tests for backend/hpcflow_cli.py (v0.4). Written by the architect; implementation must pass them unchanged."""
+"""Acceptance tests for backend/clusterflow_cli.py (v0.4). Written by the architect; implementation must pass them unchanged."""
 import ast
 import json
 import os
@@ -9,7 +9,7 @@ import pytest
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 BACKEND = os.path.join(ROOT, "backend")
-CLI = os.path.join(BACKEND, "hpcflow_cli.py")
+CLI = os.path.join(BACKEND, "clusterflow_cli.py")
 EXAMPLE = os.path.join(ROOT, "data", "example_sacct.txt")
 sys.path.insert(0, BACKEND)
 
@@ -22,7 +22,7 @@ def run(*args, stdin=None, env=None):
 
 
 # ---- compatibility: clusters often run old Python -------------------------
-@pytest.mark.parametrize("name", ["analysis.py", "hpcflow_cli.py"])
+@pytest.mark.parametrize("name", ["analysis.py", "clusterflow_cli.py"])
 def test_syntax_works_on_python_37(name):
     src = open(os.path.join(BACKEND, name), encoding="utf-8").read()
     ast.parse(src, feature_version=(3, 7))
@@ -108,15 +108,15 @@ def test_bad_columns_exit_2(tmp_path):
 
 # ---- running sacct directly -------------------------------------------------
 def test_sacct_command_is_built_correctly():
-    import hpcflow_cli
-    cmd = hpcflow_cli.sacct_command(days=3)
+    import clusterflow_cli
+    cmd = clusterflow_cli.sacct_command(days=3)
     assert cmd[0] == "sacct" and "-P" in cmd and "--units=M" in cmd and "-X" not in cmd
     assert "-S" in cmd and cmd[cmd.index("-S") + 1] == "now-3days"
     fmt = [c for c in cmd if c.startswith("--format=")][0]
     for col in ("JobID", "User", "Partition", "State", "Elapsed", "Timelimit", "AllocCPUS", "TotalCPU", "ReqMem", "MaxRSS"):
         assert col in fmt
-    assert "-a" not in hpcflow_cli.sacct_command(days=1)
-    assert "-a" in hpcflow_cli.sacct_command(days=1, all_users=True)
+    assert "-a" not in clusterflow_cli.sacct_command(days=1)
+    assert "-a" in clusterflow_cli.sacct_command(days=1, all_users=True)
 
 
 def test_days_without_sacct_gives_clear_error():

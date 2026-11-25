@@ -10,7 +10,7 @@ EXAMPLE = Path(__file__).resolve().parent.parent / "data" / "example_sacct.txt"
 MAX_BYTES = 10 * 1024 * 1024
 
 # Create FastAPI app
-app = FastAPI(title="HPCFlow", version="0.2.0")
+app = FastAPI(title="ClusterFlow", version="0.2.0")
 
 @app.get("/api/health")
 async def health():

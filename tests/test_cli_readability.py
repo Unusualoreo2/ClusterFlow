@@ -4,9 +4,9 @@ import subprocess
 import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-CLI = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+CLI = os.path.join(ROOT, "backend", "clusterflow_cli.py")
 sys.path.insert(0, os.path.join(ROOT, "backend"))
-import hpcflow_cli  # noqa: E402
+import clusterflow_cli  # noqa: E402
 
 
 HDR = "JobID|State|Elapsed|Timelimit|AllocCPUS|TotalCPU|ReqMem|MaxRSS\n"
@@ -21,16 +21,16 @@ def run(text, tmp_path, *args):
 
 
 def test_num_thousands_separators():
-    assert hpcflow_cli.num(195693.24) == "195,693.2"
-    assert hpcflow_cli.num(83.8) == "83.8"
-    assert hpcflow_cli.num(1234567, 0) == "1,234,567"
-    assert hpcflow_cli.num(None) == "-"
+    assert clusterflow_cli.num(195693.24) == "195,693.2"
+    assert clusterflow_cli.num(83.8) == "83.8"
+    assert clusterflow_cli.num(1234567, 0) == "1,234,567"
+    assert clusterflow_cli.num(None) == "-"
 
 
 def test_big_numbers_are_readable(tmp_path):
     rows = "".join("%d|COMPLETED|10:00:00|20:00:00|64|10:00:00|4G|1G\n" % i for i in range(1, 1201))
     out = run(HDR + rows, tmp_path)
-    assert "HPCFlow report: 1,200 jobs analysed" in out
+    assert "ClusterFlow report: 1,200 jobs analysed" in out
     assert "Wasted core-hours:     756,000.0" in out          # 1200 x (64 - 1) x 10 h
 
 

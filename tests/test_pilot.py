@@ -1,4 +1,4 @@
-"""pilot/check_pilot.py (v0.6): checks HPCFlow's verdicts on the six pilot test jobs. Written by the architect."""
+"""pilot/check_pilot.py (v0.6): checks ClusterFlow's verdicts on the six pilot test jobs. Written by the architect."""
 import json
 import os
 import subprocess
@@ -26,7 +26,7 @@ def sacct(jobs, first_id=900):
     rows = []
     for i, (kind, (state, el, tl, cpus, tot, req, rss)) in enumerate(jobs.items()):
         jid = str(first_id + i)
-        rows.append("|".join([jid, "hpcflow_" + kind, "me", "k2", state, T, T, el, tl, str(cpus), tot, req, ""]))
+        rows.append("|".join([jid, "clusterflow_" + kind, "me", "k2", state, T, T, el, tl, str(cpus), tot, req, ""]))
         rows.append("|".join([jid + ".batch", "batch", "", "", state, T, T, el, "", str(cpus), tot, "", rss]))
     return HDR + "\n".join(rows) + "\n"
 
@@ -77,7 +77,7 @@ def test_oom_not_enforced_is_inconclusive(tmp_path):
     r = run_check(tmp_path, jobs)
     assert line_for(r.stdout, "oom").startswith("INCONCLUSIVE")
     assert "did not enforce the memory limit" in line_for(r.stdout, "oom")
-    assert r.returncode == 0  # not HPCFlow's fault: the cluster did not enforce the limit
+    assert r.returncode == 0  # not ClusterFlow's fault: the cluster did not enforce the limit
 
 
 def test_latest_run_wins(tmp_path):

@@ -1,4 +1,4 @@
-"""Bugs found by running HPCFlow on real public sacct captures (v0.8). Written by the architect."""
+"""Bugs found by running ClusterFlow on real public sacct captures (v0.8). Written by the architect."""
 import os
 import sys
 
@@ -44,7 +44,7 @@ def test_cli_prints_dash_for_unknown_waste(tmp_path):
     import subprocess
     f = tmp_path / "x.txt"
     f.write_text("JobID|State|MaxRSS|Elapsed\n1|COMPLETED|1G|01:00:00\n", encoding="utf-8")
-    cli = os.path.join(os.path.dirname(__file__), "..", "backend", "hpcflow_cli.py")
+    cli = os.path.join(os.path.dirname(__file__), "..", "backend", "clusterflow_cli.py")
     out = subprocess.run([sys.executable, cli, str(f)], stdout=subprocess.PIPE, universal_newlines=True, timeout=60).stdout
     line = [l for l in out.splitlines() if l.startswith("Wasted core-hours")][0]
     assert line.split()[-1] == "-"

@@ -1,14 +1,14 @@
 #!/bin/bash
-# Run one Qwen task against the HPCFlow project, then verify.
+# Run one Qwen task against the ClusterFlow project, then verify.
 # Success = the whole test suite passes AND the task's own check command (if given) succeeds.
 # On failure, Qwen's edits outside tests/ and data/ are rolled back to the last commit and the task is
 # retried once, so a retry never stacks on a half-finished attempt. Commit specs/tests BEFORE calling this.
 # Usage: qwen-task.sh <task-file> [max_tokens] [check-command]
 TASK="$1"; MAXTOK="${2:-4000}"; CHECK="$3"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-PROJ="/c/Users/Owner/Documents/Computer Science/HPCFlow/MVP"
+PROJ="/c/Users/Owner/Documents/Computer Science/ClusterFlow/MVP"
 verify() {
-  (cd "$PROJ" && .venv/Scripts/python scripts/build_bundle.py >/dev/null 2>&1)   # keep dist/hpcflow.py in sync
+  (cd "$PROJ" && .venv/Scripts/python scripts/build_bundle.py >/dev/null 2>&1)   # keep dist/clusterflow.py in sync
   local r; r=$(cd "$PROJ" && .venv/Scripts/python -m pytest -q -p no:cacheprovider 2>&1 | tail -1)
   echo "tests: $r"
   echo "$r" | grep -qE "failed|error" && return 1

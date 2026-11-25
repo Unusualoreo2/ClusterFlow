@@ -6,11 +6,11 @@ import subprocess
 import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-CLI = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+CLI = os.path.join(ROOT, "backend", "clusterflow_cli.py")
 EXAMPLE = os.path.join(ROOT, "data", "example_sacct.txt")
 sys.path.insert(0, os.path.join(ROOT, "backend"))
 import analysis  # noqa: E402
-import hpcflow_cli  # noqa: E402
+import clusterflow_cli  # noqa: E402
 
 SECRETS = ["amurphy", "jkelly", "sobrien", "cfd_mesh", "md_run", "post_proc", "train_nn", "sweep_7", "4471201", "4471388"]
 
@@ -27,7 +27,7 @@ def example():
 
 def test_anonymise_function_replaces_people_and_jobs():
     original = example()
-    anon = hpcflow_cli.anonymise(original)
+    anon = clusterflow_cli.anonymise(original)
     text = json.dumps(anon)
     for s in SECRETS:
         assert s not in text, s
@@ -44,7 +44,7 @@ def test_anonymise_function_replaces_people_and_jobs():
 def test_anonymise_does_not_modify_the_input():
     original = example()
     before = json.dumps(original, sort_keys=True)
-    hpcflow_cli.anonymise(original)
+    clusterflow_cli.anonymise(original)
     assert json.dumps(original, sort_keys=True) == before
 
 
@@ -52,7 +52,7 @@ def test_anonymise_keeps_unknown_and_same_name_same_label():
     result = {"jobs": [{"job_id": "1", "name": "a", "user": "", "partition": "p"},
                        {"job_id": "2", "name": "a", "user": "x", "partition": "p"}],
               "skipped": 0, "summary": {"by_user": [{"name": "(unknown)"}, {"name": "x"}], "by_partition": []}}
-    anon = hpcflow_cli.anonymise(result)
+    anon = clusterflow_cli.anonymise(result)
     assert [j["user"] for j in anon["jobs"]] == ["", "user1"]
     assert [j["name"] for j in anon["jobs"]] == ["job1", "job1"]
     assert [g["name"] for g in anon["summary"]["by_user"]] == ["(unknown)", "user1"]

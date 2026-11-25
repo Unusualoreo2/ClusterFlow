@@ -1,4 +1,4 @@
-# HPCFlow architecture (v0.2)
+# ClusterFlow architecture (v0.2)
 
 Owner of decisions: Claude (architect). Implementation: Qwen. Every change is verified by running tests before it is accepted.
 
@@ -13,7 +13,7 @@ Owner of decisions: Claude (architect). Implementation: Qwen. Every change is ve
 
 ## Product decision
 
-HPCFlow v0.2 is a **Slurm job efficiency analyser**. It answers the question every HPC user can act on: *did my jobs use what they asked for, and what should I request next time?* This is measurable from sacct. Roofline analysis comes back later as an optional add-on fed by `likwid`/`perf` counters, which really contain FLOPs and bytes.
+ClusterFlow v0.2 is a **Slurm job efficiency analyser**. It answers the question every HPC user can act on: *did my jobs use what they asked for, and what should I request next time?* This is measurable from sacct. Roofline analysis comes back later as an optional add-on fed by `likwid`/`perf` counters, which really contain FLOPs and bytes.
 
 ## Input
 
@@ -24,7 +24,7 @@ sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Subm
 ```
 
 `-P` gives `|`-separated output. Comma-separated files (`--delimiter=,`) are also accepted. The delimiter is detected from the header line.
-Do **not** add `-X` (allocations only): `MaxRSS` is recorded on the job steps, so with `-X` memory figures are empty. HPCFlow merges each job's steps (`123.batch`, `123.0`) into the parent job, taking the largest MaxRSS.
+Do **not** add `-X` (allocations only): `MaxRSS` is recorded on the job steps, so with `-X` memory figures are empty. ClusterFlow merges each job's steps (`123.batch`, `123.0`) into the parent job, taking the largest MaxRSS.
 
 ## Metrics, per job
 
@@ -56,7 +56,7 @@ Jobs in states RUNNING, PENDING, REQUEUED, SUSPENDED and RESIZING are skipped. R
 
 ## Real-world exports (v0.8)
 
-Tested against public `sacct` captures from real clusters. HPCFlow reads `|`, comma and tab separated exports, column names in any case (`maxrss` = `MaxRSS`), and only requires `JobID` and `State`. Missing columns are reported as `warnings` (e.g. no `TotalCPU` -> no CPU efficiency) instead of rejecting the file. Fallbacks: CPU count from `NCPUS` or `cpu=` in `AllocTRES`/`ReqTRES`; memory request from `mem=` in `AllocTRES`/`ReqTRES`. A job Slurm marks `FAILED` whose step ran `OUT_OF_MEMORY` is reported as `OUT_OF_MEMORY`. Unknown totals are `null`, never 0. Fixed-width output (exported without `-P`) is refused with the correct export command. Job arrays are summarised in `summary.arrays`; the web table shows at most the 200 most wasteful jobs (CSV has all).
+Tested against public `sacct` captures from real clusters. ClusterFlow reads `|`, comma and tab separated exports, column names in any case (`maxrss` = `MaxRSS`), and only requires `JobID` and `State`. Missing columns are reported as `warnings` (e.g. no `TotalCPU` -> no CPU efficiency) instead of rejecting the file. Fallbacks: CPU count from `NCPUS` or `cpu=` in `AllocTRES`/`ReqTRES`; memory request from `mem=` in `AllocTRES`/`ReqTRES`. A job Slurm marks `FAILED` whose step ran `OUT_OF_MEMORY` is reported as `OUT_OF_MEMORY`. Unknown totals are `null`, never 0. Fixed-width output (exported without `-P`) is refused with the correct export command. Job arrays are summarised in `summary.arrays`; the web table shows at most the 200 most wasteful jobs (CSV has all).
 
 ## GPU jobs (v0.9)
 

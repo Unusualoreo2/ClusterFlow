@@ -21,8 +21,8 @@ jobs:
           pip install -r backend/requirements.txt pytest httpx
       - name: Bundle is up to date
         run: |
-          python scripts/build_bundle.py /tmp/hpcflow.py
-          diff -q /tmp/hpcflow.py dist/hpcflow.py
+          python scripts/build_bundle.py /tmp/clusterflow.py
+          diff -q /tmp/clusterflow.py dist/clusterflow.py
       - name: Tests
         run: python -m pytest -q
 
@@ -47,5 +47,5 @@ jobs:
           --deselect tests/test_warnings_ui.py::test_api_returns_warnings
       - name: Cluster bundle runs
         run: |
-          python dist/hpcflow.py data/example_sacct.txt --top 2
-          python dist/hpcflow.py data/example_sacct.txt --json > /dev/null
+          python dist/clusterflow.py data/example_sacct.txt --top 2
+          python dist/clusterflow.py data/example_sacct.txt --json > /dev/null

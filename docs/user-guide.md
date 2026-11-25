@@ -1,4 +1,4 @@
-# HPCFlow User Guide
+# ClusterFlow User Guide
 
 As an HPC user, you can improve your job efficiency by analyzing sacct exports.
 
@@ -9,11 +9,11 @@ Run this command to export your jobs:
 sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt
 ```
 
-Do not add `-X`: memory usage is recorded on the job steps, and HPCFlow merges them into each job automatically. Change `now-7days` to cover a different period.
+Do not add `-X`: memory usage is recorded on the job steps, and ClusterFlow merges them into each job automatically. Change `now-7days` to cover a different period.
 
 ## If some figures are missing
 
-If your export lacks some columns, HPCFlow still analyses it and shows a yellow note listing what is not available (for example "TotalCPU column missing: CPU efficiency is not available"). Re-export with the full command above to get every figure.
+If your export lacks some columns, ClusterFlow still analyses it and shows a yellow note listing what is not available (for example "TotalCPU column missing: CPU efficiency is not available"). Re-export with the full command above to get every figure.
 
 ## Upload or paste
 
@@ -35,7 +35,7 @@ Colours of the CPU and memory bars:
 
 ## By user and by partition
 
-If your export includes the User and Partition columns, HPCFlow also shows two small tables: one row per user and one row per partition, with the number of jobs, average CPU and memory efficiency, and wasted core-hours. The rows with the most wasted core-hours come first, so you can see where resources are lost.
+If your export includes the User and Partition columns, ClusterFlow also shows two small tables: one row per user and one row per partition, with the number of jobs, average CPU and memory efficiency, and wasted core-hours. The rows with the most wasted core-hours come first, so you can see where resources are lost.
 
 ## Queue wait
 
@@ -51,18 +51,18 @@ If your export covers more than one day, a "Trend by day" (or, for longer period
 
 ## What the waste costs
 
-Enter your centre's price per core-hour (and per GPU-hour) in the "Price the waste" box, or use `--cpu-hour-cost` / `--gpu-hour-cost` on the command line. Ask your HPC team for the rates they charge or budget with; HPCFlow does not assume any.
+Enter your centre's price per core-hour (and per GPU-hour) in the "Price the waste" box, or use `--cpu-hour-cost` / `--gpu-hour-cost` on the command line. Ask your HPC team for the rates they charge or budget with; ClusterFlow does not assume any.
 
 ## Typical jobs
 
-When you run the same job (same job name) at least three times, HPCFlow also sizes it from all those runs together, using the near-worst runs (90th percentile of CPU use, 95th percentile of memory and run time) plus a safety margin. This is safer than advice from a single run, which might have been unusually small.
+When you run the same job (same job name) at least three times, ClusterFlow also sizes it from all those runs together, using the near-worst runs (90th percentile of CPU use, 95th percentile of memory and run time) plus a safety margin. This is safer than advice from a single run, which might have been unusually small.
 
 ## Recommendations
 
-HPCFlow suggests how to improve your next job:
+ClusterFlow suggests how to improve your next job:
 
-- If CPU efficiency is low (under 50%), request fewer CPUs (HPCFlow gives the number) or check that your code really runs in parallel.
-- If memory efficiency is low (under 50%), request less memory next time: HPCFlow gives the exact --mem value.
+- If CPU efficiency is low (under 50%), request fewer CPUs (ClusterFlow gives the number) or check that your code really runs in parallel.
+- If memory efficiency is low (under 50%), request less memory next time: ClusterFlow gives the exact --mem value.
 - If memory efficiency is high (>90%), warn that the job is near its limit.
 - If time used is low, suggest a shorter time limit.
 - If a job ran out of memory or timed out, suggest more resources.

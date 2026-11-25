@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Check HPCFlow's verdicts on the six pilot test jobs (pilot/hpcflow_*.sh).
+"""Check ClusterFlow's verdicts on the six pilot test jobs (pilot/clusterflow_*.sh).
 
-Usage: python3 check_pilot.py RESULT_JSON     (RESULT_JSON = output of: hpcflow.py --days 1 --json)
+Usage: python3 check_pilot.py RESULT_JSON     (RESULT_JSON = output of: clusterflow.py --days 1 --json)
 Python 3.6+, standard library only.
 """
 import json
@@ -21,8 +21,8 @@ def job_number(job):
 
 
 def latest(jobs, kind):
-    """The most recent job named hpcflow_<kind>, or None."""
-    matches = [j for j in jobs if j.get("name") == "hpcflow_" + kind]
+    """The most recent job named clusterflow_<kind>, or None."""
+    matches = [j for j in jobs if j.get("name") == "clusterflow_" + kind]
     if not matches:
         return None
     best = max(matches, key=job_number)
@@ -81,7 +81,7 @@ def main(argv):
     print("%d/6 passed" % verdicts.count("PASS"))
     if "FAIL" in verdicts or "MISSING" in verdicts:
         print("Some checks did not pass: send the anonymised report "
-              "(hpcflow.py --days 1 --anonymise) to the developer.")
+              "(clusterflow.py --days 1 --anonymise) to the developer.")
         return 1
     return 0
 

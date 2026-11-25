@@ -78,7 +78,7 @@ def test_cli_typical_jobs_section(tmp_path):
     rows = "".join(run_row(i, tot="%02d:00:00" % (i if i < 10 else 2), rss="%dM" % (i * 1000)) for i in range(1, 11))
     f = tmp_path / "p.txt"
     f.write_text(HDR + rows, encoding="utf-8")
-    cli = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+    cli = os.path.join(ROOT, "backend", "clusterflow_cli.py")
     out = subprocess.run([sys.executable, cli, str(f)], stdout=subprocess.PIPE, universal_newlines=True, timeout=60).stdout
     assert "Typical jobs (sized from repeated runs)" in out
     assert "ann / sim (10 runs)" in out and "--cpus-per-task=10" in out

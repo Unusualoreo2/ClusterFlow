@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-FILES = [os.path.join(ROOT, "backend", "analysis.py"), os.path.join(ROOT, "backend", "hpcflow_cli.py")]
+FILES = [os.path.join(ROOT, "backend", "analysis.py"), os.path.join(ROOT, "backend", "clusterflow_cli.py")]
 
 # (pattern, reason) - features added after Python 3.6
 NEWER_THAN_36 = [
@@ -70,12 +70,12 @@ def test_scanner_catches_violations():
 
 
 def test_bundle_is_up_to_date():
-    """dist/hpcflow.py must match what build_bundle.py produces from the current sources."""
+    """dist/clusterflow.py must match what build_bundle.py produces from the current sources."""
     import tempfile
     with tempfile.TemporaryDirectory() as d:
-        out = os.path.join(d, "hpcflow.py")
+        out = os.path.join(d, "clusterflow.py")
         subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build_bundle.py"), out], check=True,
                        stdout=subprocess.PIPE)
         fresh = open(out, encoding="utf-8").read()
-    committed = open(os.path.join(ROOT, "dist", "hpcflow.py"), encoding="utf-8").read()
-    assert fresh == committed, "dist/hpcflow.py is stale: run python scripts/build_bundle.py"
+    committed = open(os.path.join(ROOT, "dist", "clusterflow.py"), encoding="utf-8").read()
+    assert fresh == committed, "dist/clusterflow.py is stale: run python scripts/build_bundle.py"

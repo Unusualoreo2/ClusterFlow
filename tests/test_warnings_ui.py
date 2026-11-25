@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-CLI = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+CLI = os.path.join(ROOT, "backend", "clusterflow_cli.py")
 EXAMPLE = os.path.join(ROOT, "data", "example_sacct.txt")
 PARTIAL = "JobID|ExitCode|State|MaxRSS|Elapsed\n1|0:0|COMPLETED|500M|00:10:00\n"
 

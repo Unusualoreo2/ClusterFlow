@@ -8,7 +8,7 @@ import pytest
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "backend"))
 import analysis as a  # noqa: E402
-import hpcflow_cli  # noqa: E402
+import clusterflow_cli  # noqa: E402
 
 TEXT = (
     "JobID|User|State|Submit|Start|Elapsed|AllocCPUS|TotalCPU\n"
@@ -62,14 +62,14 @@ def test_start_before_submit_is_ignored():
     (3900, "1h 05m"), (93600, "1d 02h"), (90000, "1d 01h"),
 ])
 def test_fmt_wait(secs, text):
-    assert hpcflow_cli.fmt_wait(secs) == text
+    assert clusterflow_cli.fmt_wait(secs) == text
 
 
 def test_cli_shows_wait(tmp_path):
     f = tmp_path / "w.txt"
     f.write_text(TEXT, encoding="utf-8")
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    out = subprocess.run([sys.executable, os.path.join(ROOT, "backend", "hpcflow_cli.py"), str(f)],
+    out = subprocess.run([sys.executable, os.path.join(ROOT, "backend", "clusterflow_cli.py"), str(f)],
                          capture_output=True, text=True, encoding="utf-8", env=env, timeout=60).stdout
     assert "Avg queue wait:" in out and "8h 50m" in out      # (1800+93600+5)/3 = 31801.7 s
     assert "Max queue wait:" in out and "1d 02h" in out
@@ -79,6 +79,6 @@ def test_cli_hides_wait_lines_without_columns(tmp_path):
     f = tmp_path / "p.txt"
     f.write_text("JobID|State|Elapsed|AllocCPUS|TotalCPU\n1|COMPLETED|01:00:00|1|01:00:00\n", encoding="utf-8")
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    out = subprocess.run([sys.executable, os.path.join(ROOT, "backend", "hpcflow_cli.py"), str(f)],
+    out = subprocess.run([sys.executable, os.path.join(ROOT, "backend", "clusterflow_cli.py"), str(f)],
                          capture_output=True, text=True, encoding="utf-8", env=env, timeout=60).stdout
     assert "queue wait" not in out.lower()

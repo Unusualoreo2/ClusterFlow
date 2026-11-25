@@ -21,7 +21,7 @@ def test_index_serves_frontend():
     r = client.get("/")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert "HPCFlow" in r.text
+    assert "ClusterFlow" in r.text
 
 
 def test_fastapi_docs_still_work():

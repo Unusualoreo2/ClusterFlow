@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HPCFlow</title>
+    <title>ClusterFlow</title>
     <style>
         :root {
             --card-bg: #ffffff;
@@ -329,7 +329,7 @@
 <body>
 <div class="container">
     <header>
-        <h1>HPCFlow</h1>
+        <h1>ClusterFlow</h1>
         <p class="subtitle">See how much of your Slurm request your jobs actually used.</p>
     </header>
 
@@ -890,7 +890,7 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = 'hpcflow_report.csv';
+                link.download = 'clusterflow_report.csv';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

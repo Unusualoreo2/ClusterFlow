@@ -55,7 +55,7 @@ def test_cli_limits_group_tables(tmp_path):
                    % (i, i) for i in range(30))
     f = tmp_path / "d.tsv"
     f.write_text(HDR + rows, encoding="utf-8")
-    cli = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+    cli = os.path.join(ROOT, "backend", "clusterflow_cli.py")
     out = subprocess.run([sys.executable, cli, str(f), "--top", "5"], stdout=subprocess.PIPE,
                          universal_newlines=True, timeout=60).stdout
     assert "By user (30, showing 5)" in out

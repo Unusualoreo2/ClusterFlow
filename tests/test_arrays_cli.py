@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-CLI = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+CLI = os.path.join(ROOT, "backend", "clusterflow_cli.py")
 EXAMPLE = os.path.join(ROOT, "data", "example_sacct.txt")
 sys.path.insert(0, os.path.join(ROOT, "tests"))
 from test_arrays import HDR, task  # noqa: E402

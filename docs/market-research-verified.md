@@ -1,6 +1,6 @@
 # Market research: verification record (25 Nov 2026)
 
-Source: "HPCFlow Market & Profitability Research Compilation", produced with Gemini from `docs/market-research-kit.md`. Its links were lost in copy-paste, so the key claims were re-checked by Claude against primary sources. Only claims marked **Verified** may be quoted as fact in `company_plan.md`.
+Source: "ClusterFlow Market & Profitability Research Compilation", produced with Gemini from `docs/market-research-kit.md`. Its links were lost in copy-paste, so the key claims were re-checked by Claude against primary sources. Only claims marked **Verified** may be quoted as fact in `company_plan.md`.
 
 | # | Claim in the Gemini report | Status | Evidence |
 |---|---|---|---|
@@ -15,7 +15,7 @@ Source: "HPCFlow Market & Profitability Research Compilation", produced with Gem
 | 8 | Perlmutter: mean peak GPU memory use 28.64% | Not verified | Gemini itself flagged it as a secondary vendor blog. Do not quote. |
 | 9 | Market sizes (60-100 UK university clusters, 2,000-4,000+ worldwide, team counts) | **Estimates** | Gemini's own explicit estimates; no source. Use only as assumptions. |
 | 10 | Competitor descriptions (seff, jobstats, Open XDMoD, ClusterCockpit, commercial suites) | Mostly plausible, not individually verified | Only reportseff checked (row 3). |
-| 11 | "HPCFlow is zero-dependency, user-space web UI and CLI" | **Partly wrong** | The CLI (`dist/hpcflow.py`) is standard-library only. The **web app needs FastAPI/uvicorn**. Correct this before using it in any pitch. |
+| 11 | "ClusterFlow is zero-dependency, user-space web UI and CLI" | **Partly wrong** | The CLI (`dist/clusterflow.py`) is standard-library only. The **web app needs FastAPI/uvicorn**. Correct this before using it in any pitch. |
 | 12 | "No surveyed tool offers anonymised export" | Not verified | A claim of absence; check before using it as a selling point. |
 | 13 | Pricing £1,500-£4,500/year per cluster | **Strategy proposal, not a fact** | Reasonable given row 4, but untested with any buyer. |
 | 14 | Break-even: 2-4 site licences at Belfast living costs | **Estimate** | Depends on the user's real costs and on row 13. |
@@ -24,5 +24,5 @@ Source: "HPCFlow Market & Profitability Research Compilation", produced with Gem
 ## Conclusions safe to act on
 
 - The waste problem is real and documented at a large production Slurm centre (row 1, 1b), and recommendation layers can recover a meaningful share of it (row 2).
-- HPCFlow's differentiator (exact `--cpus-per-task` / `--mem` / `--time` advice from plain `sacct`, CLI with no dependencies, nothing leaving the cluster) is plausible but must be confirmed by talking to HPC teams.
+- ClusterFlow's differentiator (exact `--cpus-per-task` / `--mem` / `--time` advice from plain `sacct`, CLI with no dependencies, nothing leaving the cluster) is plausible but must be confirmed by talking to HPC teams.
 - Pricing below a university's discretionary threshold is a sensible hypothesis; it needs testing with real buyers (QUB/NIHPC first).

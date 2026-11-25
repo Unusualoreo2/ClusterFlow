@@ -1,8 +1,8 @@
-# HPCFlow progress report (25 Nov 2026)
+# ClusterFlow progress report (25 Nov 2026)
 
 ## Summary
 
-HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analyser: it reads a `sacct` export and shows, per job, how much of the requested CPU, memory and time was used, how many core-hours were wasted, and what to request next time. It runs as a local web app on Windows.
+ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analyser: it reads a `sacct` export and shows, per job, how much of the requested CPU, memory and time was used, how many core-hours were wasted, and what to request next time. It runs as a local web app on Windows.
 
 ## Team and workflow
 
@@ -35,14 +35,14 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 
 ## v0.4 (same day)
 
-- **Command-line version** (`backend/hpcflow_cli.py`) that runs on the cluster itself: it calls `sacct`, prints the report (summary, by-user and by-partition tables, top jobs by waste with recommendations) and can write CSV or JSON. Standard library only, Python 3.7+ syntax. No data leaves the cluster.
+- **Command-line version** (`backend/clusterflow_cli.py`) that runs on the cluster itself: it calls `sacct`, prints the report (summary, by-user and by-partition tables, top jobs by waste with recommendations) and can write CSV or JSON. Standard library only, Python 3.7+ syntax. No data leaves the cluster.
 - Qwen's draft passed 76 of 79 tests but read data fields that don't exist. After two failed rounds, Claude rewrote the report functions.
 - 79 automated tests, all passing.
 
 ## v0.5 (same day)
 
 - **Crash-proof:** a fuzz test feeds 400+ random and garbled exports through the engine. It found that one unreadable value (e.g. `inf`, `1-`, `123_[1-3]`) rejected the entire file in 217 of 416 cases. Unreadable, negative or infinite values are now treated as missing, and the rest of the file is still analysed.
-- **One-file install for clusters:** `scripts/build_bundle.py` builds `dist/hpcflow.py` (engine + CLI in one file, Python 3.7+, Linux line endings enforced by `.gitattributes`). Users copy a single file.
+- **One-file install for clusters:** `scripts/build_bundle.py` builds `dist/clusterflow.py` (engine + CLI in one file, Python 3.7+, Linux line endings enforced by `.gitattributes`). Users copy a single file.
 - **Queue wait time:** from `sacct`'s Submit/Start columns. Per job, average and longest overall, and average per user/partition. Shown in the CLI ("Avg/Max queue wait") and the web app (card + column).
 - **Workflow fixes:** the automation now judges success by the tests plus a task-specific check (not by what Qwen says), rolls back a failed attempt before retrying, and stops Qwen when it loops on a passing test suite. Qwen reads files in 200-line chunks and can search, so it no longer runs out of memory on large files.
 - 521 automated tests, all passing.
@@ -50,7 +50,7 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 ## v0.6 (same day): Kelvin2 pilot kit
 
 - **Pilot test jobs** (`pilot/`): six Slurm jobs with known correct verdicts (well sized, too many CPUs, too much memory, too much time, out of memory, timeout), about 2.5 core-hours in total, plus `submit_all.sh`.
-- **Automatic pilot check** (`pilot/check_pilot.py`): reads HPCFlow's JSON output and prints PASS/FAIL per test job.
+- **Automatic pilot check** (`pilot/check_pilot.py`): reads ClusterFlow's JSON output and prints PASS/FAIL per test job.
 - **`--anonymise`**: shareable reports, with users, job names and job IDs replaced by `user1`/`job1`/`J1`.
 - **Better advice, found by simulating the pilot:** no more "request --mem=14M" on small jobs (memory cuts only when they save at least 1 GB), and no "request less" advice derived from failed, out-of-memory or timed-out runs.
 - **Old-Python check:** a test scans the cluster file for anything newer than Python 3.6 (verified to catch planted violations); Python 3.6 itself is not installed here, so this is a scan, not a run.
@@ -68,7 +68,7 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 
 - **First contact with real data:** public `sacct` captures from real clusters (published in an open-source R package; kept outside this repository). **All 10 files were rejected at first.** Now every job-data file is read, including exports with 1,328 real jobs, tab-separated files, lowercase headers and partial columns.
 - **Partial exports:** only `JobID` and `State` are required; missing columns produce plain-English notes in the CLI and a yellow box in the web app instead of an error. CPU count and memory request fall back to `NCPUS` / `AllocTRES` / `ReqTRES`.
-- **Two real bugs fixed:** Slurm marks some jobs `FAILED` when a step ran out of memory, so HPCFlow now reports `OUT_OF_MEMORY` with memory advice; and missing CPU data now shows wasted core-hours as unknown instead of 0.0.
+- **Two real bugs fixed:** Slurm marks some jobs `FAILED` when a step ran out of memory, so ClusterFlow now reports `OUT_OF_MEMORY` with memory advice; and missing CPU data now shows wasted core-hours as unknown instead of 0.0.
 - **Market research kit** (`docs/market-research-kit.md`): prompts for Gemini Deep Research and NotebookLM, with a verification step before results enter the company plan.
 - 578 automated tests, all passing.
 
@@ -89,7 +89,7 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 
 ## v0.11-v0.12: cost, real data at scale, readable report, typical-job advice (evening 25 Nov)
 
-- **Cost of waste** in the CLI (`--cpu-hour-cost`, `--gpu-hour-cost`, `--currency`) and a "Price the waste" box in the web app; idle GPU-hours priced from utilisation. HPCFlow never invents prices.
+- **Cost of waste** in the CLI (`--cpu-hour-cost`, `--gpu-hour-cost`, `--currency`) and a "Price the waste" box in the web app; idle GPU-hours priced from utilisation. ClusterFlow never invents prices.
 - **Real data at scale:** reads the published IN2P3 2024 dataset format (Unix timestamps, durations in seconds, lowercase states). The full December 2024 month, **2.37 million real jobs, analyses in 72 seconds**: 69% CPU efficiency, 33% memory efficiency, 5.07 million wasted core-hours, 15,071 out-of-memory jobs. Profiling confirmed linear scaling and found one speed-up (applied).
 - **Readable CLI report for the CIUK demo:** "What to fix first" headline (e.g. *84,390 jobs: request a shorter time limit* on a 100k-job sample), thousands separators, `--top` limits every table.
 - **Typical-job advice:** for jobs a user runs 3+ times, advice sized from the near-worst runs (p90 CPU, p95 memory and time), so one unusually small run cannot cause a crash-prone recommendation. In the CLI, web app and docs.

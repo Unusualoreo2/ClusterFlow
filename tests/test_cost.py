@@ -1,5 +1,5 @@
 """Cost of waste (v0.11). Written by the architect; implementation must pass it unchanged.
-HPCFlow never invents prices: the user supplies their centre's rates."""
+ClusterFlow never invents prices: the user supplies their centre's rates."""
 import json
 import os
 import subprocess
@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(ROOT, "tests"))
 import analysis as a  # noqa: E402
 from test_gpu import HDR as GPU_HDR, gpu_job  # noqa: E402
 
-CLI = os.path.join(ROOT, "backend", "hpcflow_cli.py")
+CLI = os.path.join(ROOT, "backend", "clusterflow_cli.py")
 EXAMPLE = os.path.join(ROOT, "data", "example_sacct.txt")
 
 
@@ -67,8 +67,8 @@ def test_json_includes_cost_when_rates_given():
 
 
 def test_estimate_cost_function():
-    import hpcflow_cli
+    import clusterflow_cli
     summary = {"total_wasted_core_hours": 100.0, "idle_gpu_hours": None}
-    c = hpcflow_cli.estimate_cost(summary, cpu_rate=0.03, gpu_rate=2.0, currency="€")
+    c = clusterflow_cli.estimate_cost(summary, cpu_rate=0.03, gpu_rate=2.0, currency="€")
     assert c["wasted_cpu_cost"] == pytest.approx(3.0) and c["idle_gpu_cost"] is None and c["currency"] == "€"
-    assert hpcflow_cli.estimate_cost(summary, None, None) is None
+    assert clusterflow_cli.estimate_cost(summary, None, None) is None

@@ -40,7 +40,7 @@ def read_input(args):
 
 
 def fail(msg):
-    print("hpcflow: " + msg, file=sys.stderr)
+    print("clusterflow: " + msg, file=sys.stderr)
     sys.exit(2)
 
 
@@ -107,7 +107,7 @@ def report(result, top):
     """Plain-text report: summary, optional group tables, top jobs by waste."""
     summary = result["summary"]
     skipped = result.get("skipped", 0)
-    head = "HPCFlow report: %s jobs analysed" % num(summary["job_count"], 0)
+    head = "ClusterFlow report: %s jobs analysed" % num(summary["job_count"], 0)
     if skipped > 0:
         head += " (%d running/pending skipped)" % skipped
     lines = [
@@ -253,7 +253,7 @@ def anonymise(result):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="hpcflow")
+    parser = argparse.ArgumentParser(prog="clusterflow")
     parser.add_argument("file", nargs="?", default=None, help="path to a sacct export, or '-' for stdin")
     parser.add_argument("--days", type=int, help="ignore FILE and run sacct for the last N days (default when FILE is omitted: 7 days)")
     parser.add_argument("--all-users", action="store_true", help="add '-a' to sacct (admins)")

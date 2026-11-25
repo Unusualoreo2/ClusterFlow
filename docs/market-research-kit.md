@@ -1,8 +1,8 @@
-# HPCFlow market and profitability research kit (for Gemini)
+# ClusterFlow market and profitability research kit (for Gemini)
 
 How to use it:
 1. **Deep Research:** start a new chat, paste the **Context brief** (section 1), then run the prompts in section 2 one at a time.
-2. **NotebookLM:** create a notebook "HPCFlow market", add the sources in section 3, then ask the questions listed there.
+2. **NotebookLM:** create a notebook "ClusterFlow market", add the sources in section 3, then ask the questions listed there.
 3. **Before anything goes into `company_plan.md`:** paste Gemini's answer back to Claude with the request "check this against its sources". Treat any number without a working link as unverified.
 
 Ground rules to paste with every prompt (already included below): cite a source for every number, say "unknown" rather than estimate silently, separate facts from estimates.
@@ -11,9 +11,9 @@ Ground rules to paste with every prompt (already included below): cite a source 
 
 ## 1. Context brief (paste this first)
 
-> I am a first-year computer science student in Northern Ireland building a small software product called HPCFlow. Please treat everything below as context for my next questions.
+> I am a first-year computer science student in Northern Ireland building a small software product called ClusterFlow. Please treat everything below as context for my next questions.
 >
-> **What HPCFlow does (built and tested):** it reads Slurm job accounting data (`sacct` exports) and shows, per job, per user, per partition and per job array, how much of the requested CPU, memory and time was actually used, how many core-hours were wasted, how long jobs waited in the queue, and the exact resources to request next time (e.g. `--cpus-per-task`, `--mem`, `--time`). It runs as a local web app or as a single-file command-line tool on a cluster login node (Python, standard library only). No job data leaves the cluster. It has an anonymised-report option for sharing.
+> **What ClusterFlow does (built and tested):** it reads Slurm job accounting data (`sacct` exports) and shows, per job, per user, per partition and per job array, how much of the requested CPU, memory and time was actually used, how many core-hours were wasted, how long jobs waited in the queue, and the exact resources to request next time (e.g. `--cpus-per-task`, `--mem`, `--time`). It runs as a local web app or as a single-file command-line tool on a cluster login node (Python, standard library only). No job data leaves the cluster. It has an anonymised-report option for sharing.
 >
 > **What it does not do yet:** GPU efficiency, hardware-counter (Roofline) analysis, history over months, multi-user hosted service.
 >
@@ -50,7 +50,7 @@ Ground rules to paste with every prompt (already included below): cite a source 
 
 ---
 
-## 3. NotebookLM notebook "HPCFlow market"
+## 3. NotebookLM notebook "ClusterFlow market"
 
 Add as sources (links or PDFs):
 - The Slurm `sacct` documentation (slurm.schedmd.com/sacct.html).
@@ -59,7 +59,7 @@ Add as sources (links or PDFs):
 - Your own `docs/architecture.md`, `docs/progress-report.md` and `company_plan.md` from this project.
 
 Ask:
-1. "Based only on these sources, what does HPCFlow do that the other tools do not? Quote the sources."
+1. "Based only on these sources, what does ClusterFlow do that the other tools do not? Quote the sources."
 2. "What evidence in these sources shows that wasted HPC resources cost money or research time?"
 3. "Which claims in company_plan.md are not supported by any source here?"
 

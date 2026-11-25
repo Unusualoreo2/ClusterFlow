@@ -1,9 +1,9 @@
-# HPCFlow - Company Plan
+# ClusterFlow - Company Plan
 
 Last updated 25 Nov 2026. Every statistic below is verified against its source (see `docs/market-research-verified.md`); estimates and proposals are labelled as such.
 
 ## Overview
-HPCFlow is a Slurm job efficiency analyser. It reads `sacct` accounting data and shows, per job, user, partition, job array and day/week, how much of the requested CPU, memory, GPU and time was actually used, how many core-hours and GPU-hours were wasted, what that waste costs at the centre's own rates, and exactly what to request next time. It runs as a single-file command-line tool on a cluster login node (Python standard library only, nothing leaves the cluster) and as a local web app.
+ClusterFlow is a Slurm job efficiency analyser. It reads `sacct` accounting data and shows, per job, user, partition, job array and day/week, how much of the requested CPU, memory, GPU and time was actually used, how many core-hours and GPU-hours were wasted, what that waste costs at the centre's own rates, and exactly what to request next time. It runs as a single-file command-line tool on a cluster login node (Python standard library only, nothing leaves the cluster) and as a local web app.
 
 ## Problem
 Researchers routinely request far more than their jobs use, which blocks the queue for everyone and wastes funded compute:
@@ -18,7 +18,7 @@ Status: v0.11 built and tested (610 automated tests; backed up to a private GitH
 - CPU, memory and time efficiency; wasted core-hours; queue wait; per-user, per-partition, per-array and day/week trend summaries.
 - GPU-hours, GPU utilisation (where the cluster records it) and idle-GPU advice.
 - Concrete advice: the `--cpus-per-task`, `--mem`, `--time` and `--gpus` values to request next time; out-of-memory and timeout jobs flagged.
-- Cost of waste at the centre's own `£/core-hour` and `£/GPU-hour` rates (HPCFlow never invents prices).
+- Cost of waste at the centre's own `£/core-hour` and `£/GPU-hour` rates (ClusterFlow never invents prices).
 - Reads real-world exports (tab/pipe/comma, partial columns with plain-English notes); `--anonymise` for shareable reports.
 - Accuracy note: the **command-line tool has no dependencies**; the **web app needs FastAPI/uvicorn**.
 
@@ -39,13 +39,13 @@ Not built yet: Roofline / code-level advice (needs hardware-counter data such as
 With living and business costs of roughly £6,000-£11,000 a year *(the founder's own figures to confirm)*, about **2-4 site licences** at the proposed price would break even. University sales cycles are likely several months, so funding and pilots come first.
 
 ## Next Steps
-1. **Kelvin2 pilot** (access requested): run `docs/pilot-guide.md` and confirm HPCFlow's advice on real jobs.
+1. **Kelvin2 pilot** (access requested): run `docs/pilot-guide.md` and confirm ClusterFlow's advice on real jobs.
 2. **Validation conversations**: offer QUB/NIHPC and 5-10 other UK research-computing teams a free, anonymised waste report; ask whether they would pay for a site licence.
 3. **Apply for QUB student enterprise support** (confirm current schemes and amounts first).
 4. Turn on automated testing on GitHub; build and test the Docker image.
 
 ## Risks
-- **Free alternatives** (`seff`, `reportseff`, jobstats): HPCFlow must show clear extra value (exact advice, cost, zero install).
+- **Free alternatives** (`seff`, `reportseff`, jobstats): ClusterFlow must show clear extra value (exact advice, cost, zero install).
 - **No live-cluster validation yet**: edge cases in real accounting data may remain.
 - **Solo student founder**: limited time in term and exams; university procurement and support expectations.
-- **Data protection**: `sacct` data contains usernames; HPCFlow keeps data on the cluster and offers `--anonymise`, but each centre's rules apply.
+- **Data protection**: `sacct` data contains usernames; ClusterFlow keeps data on the cluster and offers `--anonymise`, but each centre's rules apply.

@@ -99,7 +99,7 @@ def test_gpu_per_user_group():
 
 def test_cli_shows_gpu_lines(tmp_path):
     import subprocess
-    cli = os.path.join(os.path.dirname(__file__), "..", "backend", "hpcflow_cli.py")
+    cli = os.path.join(os.path.dirname(__file__), "..", "backend", "clusterflow_cli.py")
     f = tmp_path / "g.txt"
     f.write_text(HDR + gpu_job(10, gpus="gres/gpu=4", util="gres/gpuutil=20"), encoding="utf-8")
     out = subprocess.run([sys.executable, cli, str(f)], stdout=subprocess.PIPE, universal_newlines=True, timeout=60).stdout

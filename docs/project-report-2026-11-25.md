@@ -1,4 +1,4 @@
-# HPCFlow: full project report
+# ClusterFlow: full project report
 
 **Date:** 25 November 2026 (one working day, roughly 11:00 to 15:15)
 **Status:** v0.8, 578 automated tests passing, 46 commits, backed up to a private GitHub repository.
@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-HPCFlow started the day as an AI-generated prototype whose core analysis could not work. It is now a tested **Slurm job efficiency analyser**: it reads `sacct` exports and shows, per job, user, partition and job array, how much of the requested CPU, memory and time was used, how many core-hours were wasted, how long jobs waited, and exactly what to request next time. It runs as a local web app and as a single-file command-line tool for cluster login nodes, and it has been checked against real public Slurm data.
+ClusterFlow started the day as an AI-generated prototype whose core analysis could not work. It is now a tested **Slurm job efficiency analyser**: it reads `sacct` exports and shows, per job, user, partition and job array, how much of the requested CPU, memory and time was used, how many core-hours were wasted, how long jobs waited, and exactly what to request next time. It runs as a local web app and as a single-file command-line tool for cluster login nodes, and it has been checked against real public Slurm data.
 
 It has **not yet run on a live cluster**. Kelvin2 (QUB) access has been requested, and a pilot kit is ready for when it is granted.
 
@@ -55,7 +55,7 @@ It has **not yet run on a live cluster**. Kelvin2 (QUB) access has been requeste
 | v0.2 | Real analysis engine (Python standard library only), web API, new web page, Windows start script, fixed Dockerfile, docs |
 | v0.3 | Handles real-world `sacct` quirks (array jobs, extern steps, KB memory, repeated headers); per-user and per-partition summaries |
 | v0.4 | Command-line tool for cluster login nodes: runs `sacct` itself, text/CSV/JSON output, no data leaves the cluster |
-| v0.5 | Crash-proofing (fuzz tests on 400+ garbled inputs found that one bad value rejected the whole file in 217 of 416 cases; fixed); single-file cluster build `dist/hpcflow.py`; queue wait time |
+| v0.5 | Crash-proofing (fuzz tests on 400+ garbled inputs found that one bad value rejected the whole file in 217 of 416 cases; fixed); single-file cluster build `dist/clusterflow.py`; queue wait time |
 | v0.6 | Kelvin2 pilot kit: six test jobs with known answers, automatic PASS/FAIL checker, `--anonymise` for shareable reports, pilot guide, old-Python compatibility check |
 | v0.7 | Scale (100,000 jobs in about 2 seconds); job-array rollup; web page shows at most the 200 most wasteful jobs |
 | v0.8 | Real public `sacct` data: tab-separated files, any column-name case, partial exports with plain-English notes, TRES fallbacks; two bugs found only on real data fixed (out-of-memory recorded only on a job step; "0.0 wasted" shown when unknown) |
@@ -66,7 +66,7 @@ Code size: about 2,000 lines of application code, about 1,450 lines of tests.
 
 ## 5. Infrastructure and access
 
-- **Version control and backup:** local git from the first change; private GitHub repo `Unusualoreo2/HPCFlow`; a hook pushes every commit automatically (verified). GitHub CLI installed as a portable build because Windows administrator approval was not possible.
+- **Version control and backup:** local git from the first change; private GitHub repo `Unusualoreo2/ClusterFlow`; a hook pushes every commit automatically (verified). GitHub CLI installed as a portable build because Windows administrator approval was not possible.
 - **Automatic testing on GitHub:** a workflow (all tests on Python 3.12, cluster tool on Python 3.8) is written and parked in `tools/ci/`. It needs you to approve GitHub's `workflow` permission once.
 - **Clusters:**
   - Kelvin2 (QUB): access requested, for up to 8 cores / 8 GB per job and under 20 core-hours.
