@@ -23,7 +23,7 @@ NEWER_THAN_36 = [
     (r"functools\.cached_property", "3.8+"),
     (r"\.removeprefix\(|\.removesuffix\(", "3.9+"),
     (r"zoneinfo|graphlib", "3.9+"),
-    (r"\bmatch\s+\w+.*:\s*$", "match statement is 3.10+"),
+    (r"^\s*match\s+\S.*:\s*$", "match statement is 3.10+"),
     (r":=", "walrus operator is 3.8+"),
     (r"f\"[^\"]*\{[^}]*=\}", "f-string '=' specifier is 3.8+"),
     (r"(list|dict|tuple|set)\[[A-Za-z]", "builtin generics in annotations are 3.9+"),
@@ -62,6 +62,12 @@ def test_scanner_catches_violations():
     bad = 'import subprocess\nsubprocess.run(["x"], capture_output=True, text=True)\nif (n := 3): pass\n'
     hits = [why for pat, why in NEWER_THAN_36 if re.search(pat, code_only(bad), re.M)]
     assert len(hits) == 3, hits
+    assert [w for p, w in NEWER_THAN_36 if re.search(p, code_only('match x:
+    pass
+'), re.M)]
+    assert not [w for p, w in NEWER_THAN_36 if re.search(p, code_only('for a, match in b:
+    pass
+'), re.M)]
     assert not [w for p, w in NEWER_THAN_36 if re.search(p, code_only('"""capture_output= in a docstring"""\n'), re.M)]
 
 

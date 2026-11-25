@@ -933,6 +933,33 @@ def fmt_wait(s):
     return "%dd %02dh" % (s // 86400, (s % 86400) // 3600)
 
 
+def num(v, decimals=1):
+    """Number with thousands separators: 195693.24 -> '195,693.2'; None -> '-'."""
+    return "-" if v is None else "{:,.{}f}".format(v, decimals)
+
+
+FIX_CATEGORIES = [
+    ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
+    ("request less memory", lambda r: r.startswith("Memory efficiency is")),
+    ("request a shorter time limit", lambda r: r.startswith("Only ") and "time limit" in r),
+    ("request fewer GPUs or check GPU use", lambda r: r.startswith("GPU utilisation is")),
+    ("ran out of memory", lambda r: r.startswith("Job ran out of memory")),
+    ("hit the time limit", lambda r: r.startswith("Job hit its time limit")),
+    ("close to the memory limit", lambda r: r.startswith("Peak memory is")),
+]
+
+
+def fix_first(jobs):
+    """Lines like '2 jobs: request fewer CPUs', most common first (ties keep FIX_CATEGORIES order)."""
+    counts = []
+    for label, match in FIX_CATEGORIES:
+        n = sum(1 for j in jobs if any(match(r) for r in j["recommendations"]))
+        if n:
+            counts.append((n, label))
+    counts.sort(key=lambda c: -c[0])
+    return ["  %s %s: %s" % (num(n, 0), "job" if n == 1 else "jobs", label) for n, label in counts]
+
+
 def pct(v):
     return "-" if v is None else "%d%%" % round(v)
 
@@ -955,7 +982,7 @@ def report(result, top):
     """Plain-text report: summary, optional group tables, top jobs by waste."""
     summary = result["summary"]
     skipped = result.get("skipped", 0)
-    head = "HPCFlow report: %d jobs analysed" % summary["job_count"]
+    head = "HPCFlow report: %s jobs analysed" % num(summary["job_count"], 0)
     if skipped > 0:
         head += " (%d running/pending skipped)" % skipped
     lines = [
@@ -963,7 +990,7 @@ def report(result, top):
         "Avg CPU efficiency:    %s" % pct(summary["avg_cpu_efficiency"]),
         "Avg memory efficiency: %s" % pct(summary["avg_memory_efficiency"]),
         "Wasted core-hours:     %s" % ("-" if summary["total_wasted_core_hours"] is None
-                                        else "%.1f" % summary["total_wasted_core_hours"]),
+                                        else num(summary["total_wasted_core_hours"])),
     ]
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
@@ -985,6 +1012,9 @@ def report(result, top):
     for w in result.get("warnings", []):
         lines.append("Note: " + w)
     lines.append("")
+    fixes = fix_first(result["jobs"])
+    if fixes:
+        lines += ["What to fix first"] + fixes + [""]
     if summary.get("by_user"):
         lines += _group_table("By user", summary["by_user"], top)
     if summary.get("by_partition"):
@@ -1013,7 +1043,7 @@ def report(result, top):
     for j in jobs:
         wasted = "-" if j["wasted_core_hours"] is None else "%.1f" % j["wasted_core_hours"]
         lines.append("  %s  %s  CPU %s  MEM %s  TIME %s  WASTED %s" % (
-            j["job_id"], j["name"], pct(j["cpu_efficiency"]), pct(j["memory_efficiency"]),
+            j["job_id"], j["name"] or "-", pct(j["cpu_efficiency"]), pct(j["memory_efficiency"]),
             pct(j["time_used"]), wasted))
         for rec in j["recommendations"]:
             lines.append("    - " + rec)
@@ -1050,7 +1080,7 @@ def estimate_cost(summary, cpu_rate, gpu_rate, currency="£"):
 
 
 def _money(currency, value):
-    return "%s%.2f" % (currency, value)
+    return "%s{:,.2f}".format(value) % currency
 
 
 def _rate(currency, value):

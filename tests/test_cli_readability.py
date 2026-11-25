@@ -7,9 +7,7 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 CLI = os.path.join(ROOT, "backend", "hpcflow_cli.py")
 sys.path.insert(0, os.path.join(ROOT, "backend"))
 import hpcflow_cli  # noqa: E402
-import pytest
 
-pytestmark = pytest.mark.skip(reason="v0.12 readable report not implemented yet: Qwen failed twice; spec in tests")
 
 HDR = "JobID|State|Elapsed|Timelimit|AllocCPUS|TotalCPU|ReqMem|MaxRSS\n"
 
@@ -60,5 +58,5 @@ def test_no_fix_first_when_all_well_sized(tmp_path):
 
 def test_unnamed_jobs_show_a_dash(tmp_path):
     out = run(HDR + "1|COMPLETED|01:00:00|20:00:00|16|01:00:00|32G|1G\n", tmp_path)
-    top = [l for l in out.splitlines() if l.startswith("  1 ")][0]
+    top = [l for l in out.splitlines() if l.startswith("  1  ")][0]
     assert top.startswith("  1  -  CPU ")
