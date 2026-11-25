@@ -808,6 +808,9 @@ def analyze(text):
     gpu_utils = [j["gpu_utilization"] for j in gpu_jobs if j["gpu_utilization"] is not None]
     total_gpu_hours = sum(gpu_hours) if gpu_hours else None
     avg_gpu_utilization = sum(gpu_utils) / len(gpu_utils) if gpu_utils else None
+    idle = [j["gpu_hours"] * (1 - j["gpu_utilization"] / 100) for j in gpu_jobs
+            if j["gpu_hours"] is not None and j["gpu_utilization"] is not None]
+    idle_gpu_hours = sum(idle) if idle else None
 
     waits = [j["wait_s"] for j in analyzed_jobs if j["wait_s"] is not None]
     avg_wait_s = sum(waits) / len(waits) if waits else None
@@ -844,6 +847,7 @@ def analyze(text):
             "gpu_job_count": len(gpu_jobs),
             "total_gpu_hours": total_gpu_hours,
             "avg_gpu_utilization": avg_gpu_utilization,
+            "idle_gpu_hours": idle_gpu_hours,
             "trend": summarize_trend(analyzed_jobs),
             "arrays": summarize_arrays(analyzed_jobs),
             "by_user": by_user,

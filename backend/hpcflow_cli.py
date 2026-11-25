@@ -95,6 +95,15 @@ def report(result, top):
         lines.append("GPU-hours:             %s" % ("-" if summary["total_gpu_hours"] is None
                                                     else "%.1f" % summary["total_gpu_hours"]))
         lines.append("Avg GPU utilisation:   %s" % pct(summary["avg_gpu_utilization"]))
+    cost = result.get("cost")
+    if cost:
+        cur = cost["currency"]
+        if cost["wasted_cpu_cost"] is not None:
+            lines.append("Cost of wasted CPU time:  %s (at %s per core-hour)"
+                         % (_money(cur, cost["wasted_cpu_cost"]), _rate(cur, cost["cpu_rate"])))
+        if cost["idle_gpu_cost"] is not None:
+            lines.append("Cost of idle GPU time:    %s (at %s per GPU-hour)"
+                         % (_money(cur, cost["idle_gpu_cost"]), _rate(cur, cost["gpu_rate"])))
     for w in result.get("warnings", []):
         lines.append("Note: " + w)
     lines.append("")
@@ -147,6 +156,29 @@ def write_csv(result, path):
                         num(j["wasted_core_hours"]), " | ".join(j["recommendations"])])
 
 
+def estimate_cost(summary, cpu_rate, gpu_rate, currency="£"):
+    """Price wasted CPU time and idle GPU time at the user's own rates. None if no rate is given."""
+    if cpu_rate is None and gpu_rate is None:
+        return None
+    wasted = summary.get("total_wasted_core_hours")
+    idle = summary.get("idle_gpu_hours")
+    return {
+        "currency": currency,
+        "cpu_rate": cpu_rate,
+        "gpu_rate": gpu_rate,
+        "wasted_cpu_cost": wasted * cpu_rate if cpu_rate is not None and wasted is not None else None,
+        "idle_gpu_cost": idle * gpu_rate if gpu_rate is not None and idle is not None else None,
+    }
+
+
+def _money(currency, value):
+    return "%s%.2f" % (currency, value)
+
+
+def _rate(currency, value):
+    return "%s%s" % (currency, ("%.2f" % value) if round(value, 2) == value else ("%g" % value))
+
+
 def anonymise(result):
     """Copy of an analyze() result with users, job names and job IDs replaced by user1/job1/J1 labels.
     Same value -> same label, numbered in order of first appearance in result["jobs"].
@@ -189,6 +221,11 @@ def main(argv=None):
     parser.add_argument("--csv", help="also write a CSV report to PATH")
     parser.add_argument("--anonymise", "--anonymize", action="store_true",
                         help="replace user names, job names and job IDs with neutral labels (safe to share)")
+    parser.add_argument("--cpu-hour-cost", type=float, default=None,
+                        help="your centre's price per core-hour, to show what wasted CPU time costs")
+    parser.add_argument("--gpu-hour-cost", type=float, default=None,
+                        help="your centre's price per GPU-hour, to show what idle GPU time costs")
+    parser.add_argument("--currency", default="£", help="currency symbol for costs (default: £)")
 
     args = parser.parse_args(argv)
 
@@ -200,6 +237,12 @@ def main(argv=None):
 
     if args.anonymise:
         result = anonymise(result)
+    for rate in (args.cpu_hour_cost, args.gpu_hour_cost):
+        if rate is not None and rate < 0:
+            fail("cost rates must be zero or positive")
+    cost = estimate_cost(result["summary"], args.cpu_hour_cost, args.gpu_hour_cost, args.currency)
+    if cost:
+        result["cost"] = cost
     if args.json:
         print(json.dumps(result, indent=2))
     else:
