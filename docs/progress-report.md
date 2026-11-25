@@ -33,6 +33,12 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - **Per-user and per-partition summaries:** jobs, average efficiencies and wasted core-hours per user and per partition, sorted by waste, shown as two tables in the web app. Review caught an averaging bug (dividing by all jobs instead of jobs with a value) before it was committed.
 - 65 automated tests, all passing.
 
+## v0.4 (same day)
+
+- **Command-line version** (`backend/hpcflow_cli.py`) that runs on the cluster itself: it calls `sacct`, prints the report (summary, by-user and by-partition tables, top jobs by waste with recommendations) and can write CSV or JSON. Standard library only, Python 3.7+ syntax. No data leaves the cluster.
+- Qwen's draft passed 76 of 79 tests but read data fields that don't exist. After two failed rounds, Claude rewrote the report functions.
+- 79 automated tests, all passing.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.
