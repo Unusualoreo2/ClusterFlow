@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.20, **733 tests, all passing** |
+| Version | v0.24, **753 tests, all passing** |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -68,6 +68,10 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.18 | `--compare BEFORE`: what improved between two periods; try-it-yourself guide with before/after samples; Qwen worker cannot edit tests/ |
 | v0.19 | `--version`; readable `--help`; web "Download report (HTML)"; HTML report readable in dark mode; IN2P3 month re-checked (same results); progress report and README synced |
 | v0.20 | Folder move done (work continues in ClusterFlow\MVP); Docker Desktop + WSL 2 installed (user approved); image hardened (non-root, .dockerignore) and tested by `tests/test_docker.py` |
+| v0.21 | Per-user reports show the cluster average; CPU advice wording tidied |
+| v0.22 | Queue wait by time-limit band (CLI, HTML, web) |
+| v0.23 | Shows the 90% wait mark, since the median hid the tail (IN2P3: 90% started within 14m for limits up to 1 h vs 7h 53m over 24 h); the advice line appears only when waits really grow |
+| v0.24 | Advice never lowers memory or time that already ran out (arrays with an OOM task, typical jobs with OOM/TIMEOUT runs); OOM advice uses max(request, MaxRSS) |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
