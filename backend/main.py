@@ -1,8 +1,8 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from pathlib import Path
 from analysis import analyze
-from clusterflow_cli import DEMO_SACCT
+from clusterflow_cli import DEMO_SACCT, html_report
 from pydantic import BaseModel
 
 # Constants
@@ -68,3 +68,9 @@ class TextIn(BaseModel):
 @app.post("/api/analyze-text")
 async def analyze_text(request: TextIn):
     return await _run(request.text.encode("utf-8"))
+
+
+@app.post("/api/report-html")
+async def report_html(request: TextIn):
+    result = await _run(request.text.encode("utf-8"))
+    return HTMLResponse(html_report(result, 10))

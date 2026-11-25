@@ -287,9 +287,10 @@ def html_report(result, top, banner=None):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
 <title>ClusterFlow report</title>
 <style>
-body { font-family: system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+body { font-family: system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; background: #fff; }
 table.summary { border-collapse: collapse; margin: 1rem 0; }
 table.summary th { text-align: left; padding: .25rem 1.5rem .25rem 0; font-weight: 600; }
 table.summary td { padding: .25rem 0; }

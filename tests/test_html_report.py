@@ -137,3 +137,10 @@ def test_user_guide_html_section_is_a_sentence():
     with open(os.path.join(ROOT, "docs", "user-guide.md"), encoding="utf-8") as f:
         guide = f.read()
     assert "python3 dist/clusterflow.py jobs.txt --html report.html" in guide
+
+
+def test_readable_in_dark_mode(demo_html):
+    """Found by viewing it: dark-mode browsers drew the near-black text on a dark background."""
+    assert '<meta name="color-scheme" content="light">' in demo_html
+    body_rule = re.search(r"body \{([^}]*)\}", demo_html).group(1)
+    assert "background: #fff" in body_rule
