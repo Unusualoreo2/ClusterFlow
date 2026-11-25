@@ -25,7 +25,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.15, **678 tests, all passing** |
+| Version | v0.16, **695 tests, all passing** |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -60,6 +60,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.13 | Impossible CPU efficiency (Slurm accounting artefact on very short jobs) ignored with a note; project renamed ClusterFlow |
 | v0.14 | One-command demo: `clusterflow --demo` (built-in made-up sample showing every finding; also the web page's demo button); fixed `--anonymise` leaking names in typical-job advice |
 | v0.15 | `--html report.html` for one file to open, print or email; bundle checked on Python 3.15 |
+| v0.16 | Paste-ready `#SBATCH` lines for typical jobs (CLI, HTML, web); bundle tested on real Python 3.6.8 and 3.8.10 (`tests/test_real_old_python.py`, embeddable builds in `%LOCALAPPDATA%\Programs\python-embed`) |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -81,7 +82,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 - CIUK demo: done in v0.14 (`python dist/clusterflow.py --demo`); a printable one-page handout could follow.
 - Typical-job advice tested only on constructed data (IN2P3 has no job names).
 - Docker image never built (README marks it untested).
-- Python 3.6/3.8 compatibility checked by scanning only; the parked CI would run 3.8 for real.
+- Python 3.6/3.8: now run for real locally (v0.16). Docker needs an admin install, so it is still untested.
 - Roofline / hardware-counter analysis; hosted multi-user version: not started.
 
 ## 8. Key files

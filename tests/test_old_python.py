@@ -1,5 +1,6 @@
 """The cluster file must run on old system Pythons (RHEL/Rocky 8 ship Python 3.6).
-Python 3.6 is not installed on the dev machine, so this scans for syntax and stdlib features newer than 3.6."""
+This scans for syntax and stdlib features newer than 3.6.
+See tests/test_real_old_python.py for runs on real 3.6.8 / 3.8.10 builds."""
 import ast
 import os
 import re

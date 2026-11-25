@@ -26,7 +26,7 @@ Open http://127.0.0.1:8000
 
 ## Run it on the cluster (command line)
 
-Copy `backend/analysis.py` and `backend/clusterflow_cli.py` to the cluster (Python 3.7+, standard library only), then on a login node:
+Copy the single file `dist/clusterflow.py` to the cluster (Python 3.6+, standard library only; tested on real 3.6.8 and 3.8.10), then on a login node:
 
 ```bash
 python3 clusterflow_cli.py                 # runs sacct for your jobs of the last 7 days

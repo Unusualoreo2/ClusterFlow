@@ -67,6 +67,17 @@ ClusterFlow suggests how to improve your next job:
 - If time used is low, suggest a shorter time limit.
 - If a job ran out of memory or timed out, suggest more resources.
 
+## Ready-to-paste settings for jobs you run often
+
+For any job you have run at least 3 times (same name), the report sizes the next request from your near-worst runs and prints the lines to paste into your job script, for example:
+
+    Paste into your job script:
+      #SBATCH --cpus-per-task=13
+      #SBATCH --mem=14160M
+      #SBATCH --time=04:30:00
+
+Only settings worth changing are listed. Replace the matching lines in your script; keep the others.
+
 ## Share or print a report: `--html`
 
 Add `--html report.html` to write the whole report as one self-contained web page that you can open in any browser, print or email:
