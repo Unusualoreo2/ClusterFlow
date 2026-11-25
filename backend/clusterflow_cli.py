@@ -442,25 +442,33 @@ def write_user_reports(text, args):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="clusterflow")
+    parser = argparse.ArgumentParser(
+        prog="clusterflow",
+        description="Shows how much of their Slurm requests your jobs actually used, and what to request next time.",
+        epilog="Examples:\n"
+               "  python3 clusterflow.py --demo                     see a report on made-up data\n"
+               "  python3 clusterflow.py                            your jobs of the last 7 days\n"
+               "  python3 clusterflow.py jobs.txt --html report.html\n"
+               "  python3 clusterflow.py --all-users --split-by-user reports/   (admins)",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--version", action="version", version="clusterflow " + VERSION)
     parser.add_argument("file", nargs="?", default=None, help="path to a sacct export, or '-' for stdin")
-    parser.add_argument("--days", type=int, help="ignore FILE and run sacct for the last N days (default when FILE is omitted: 7 days)")
+    parser.add_argument("--days", type=int, metavar="N", help="ignore FILE and run sacct for the last N days (default when FILE is omitted: 7 days)")
     parser.add_argument("--all-users", action="store_true", help="add '-a' to sacct (admins)")
-    parser.add_argument("--top", type=int, default=5, help="how many jobs to list (default 5)")
-    parser.add_argument("--json", action="store_true", help="print json.dumps(result, indent=2) instead of the text report")
-    parser.add_argument("--csv", help="also write a CSV report to PATH")
-    parser.add_argument("--html", help="also write a self-contained HTML report to PATH (open, print or email it)")
+    parser.add_argument("--top", type=int, default=5, metavar="N", help="how many jobs to list (default 5)")
+    parser.add_argument("--json", action="store_true", help="print the full analysis as JSON instead of the text report")
+    parser.add_argument("--csv", metavar="PATH", help="also write a CSV report to PATH")
+    parser.add_argument("--html", metavar="PATH", help="also write a self-contained HTML report to PATH (open, print or email it)")
     parser.add_argument("--split-by-user", metavar="DIR",
                         help="also write one HTML report per user into DIR (to send each researcher their own)")
     parser.add_argument("--compare", metavar="BEFORE", help="also analyse an earlier sacct export and show what changed since then")
     parser.add_argument("--anonymise", "--anonymize", action="store_true",
                         help="replace user names, job names and job IDs with neutral labels (safe to share)")
-    parser.add_argument("--cpu-hour-cost", type=float, default=None,
-                        help="your centre's price per core-hour, to show what wasted CPU time costs")
-    parser.add_argument("--gpu-hour-cost", type=float, default=None,
-                        help="your centre's price per GPU-hour, to show what idle GPU time costs")
-    parser.add_argument("--currency", default="£", help="currency symbol for costs (default: £)")
+    parser.add_argument("--cpu-hour-cost", type=float, default=None, metavar="RATE",
+                         help="your centre's price per core-hour, to show what wasted CPU time costs")
+    parser.add_argument("--gpu-hour-cost", type=float, default=None, metavar="RATE",
+                         help="your centre's price per GPU-hour, to show what idle GPU time costs")
+    parser.add_argument("--currency", default="£", metavar="SYMBOL", help="currency symbol for costs (default: £)")
     parser.add_argument("--demo", action="store_true", help="analyse a built-in sample (made-up data) to see what the report looks like")
 
     args = parser.parse_args(argv)
