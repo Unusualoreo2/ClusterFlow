@@ -87,6 +87,16 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - **Workflow:** Qwen built the engine part first try and the display in one run; Claude corrected a one-space indentation slip and made the edit tool align replacements properly.
 - 602 automated tests, all passing; backed up to GitHub automatically.
 
+## v0.11-v0.12: cost, real data at scale, readable report, typical-job advice (evening 25 Nov)
+
+- **Cost of waste** in the CLI (`--cpu-hour-cost`, `--gpu-hour-cost`, `--currency`) and a "Price the waste" box in the web app; idle GPU-hours priced from utilisation. HPCFlow never invents prices.
+- **Real data at scale:** reads the published IN2P3 2024 dataset format (Unix timestamps, durations in seconds, lowercase states). The full December 2024 month, **2.37 million real jobs, analyses in 72 seconds**: 69% CPU efficiency, 33% memory efficiency, 5.07 million wasted core-hours, 15,071 out-of-memory jobs. Profiling confirmed linear scaling and found one speed-up (applied).
+- **Readable CLI report for the CIUK demo:** "What to fix first" headline (e.g. *84,390 jobs: request a shorter time limit* on a 100k-job sample), thousands separators, `--top` limits every table.
+- **Typical-job advice:** for jobs a user runs 3+ times, advice sized from the near-worst runs (p90 CPU, p95 memory and time), so one unusually small run cannot cause a crash-prone recommendation. In the CLI, web app and docs.
+- **Process:** a gated commit helper (`tools/safe-commit.sh`) now refuses to commit unless all tests pass, after one broken test file reached GitHub for about 30 seconds. Qwen built almost everything; Claude implemented the readable report after Qwen failed it twice.
+- Open: 6 jobs in the IN2P3 month show impossible >150% efficiencies (likely dataset quirks; not investigated). IN2P3 has no job names, so typical-job advice was tested on constructed data only.
+- 627 automated tests, all passing; backed up to GitHub automatically.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.
