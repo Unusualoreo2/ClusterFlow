@@ -937,8 +937,11 @@ def pct(v):
     return "-" if v is None else "%d%%" % round(v)
 
 
-def _group_table(title, groups):
-    """Text table for summary["by_user"] / summary["by_partition"]."""
+def _group_table(title, groups, limit=None):
+    """Group table; with a limit, only the first `limit` groups (they arrive sorted by waste)."""
+    if limit is not None and len(groups) > limit:
+        title = "%s (%d, showing %d)" % (title, len(groups), limit)
+        groups = groups[:limit]
     lines = [title, "  %-16s %5s %6s %6s %9s" % ("NAME", "JOBS", "CPU", "MEM", "WASTED")]
     for g in groups:
         lines.append("  %-16s %5d %6s %6s %9.1f" % (
@@ -983,9 +986,9 @@ def report(result, top):
         lines.append("Note: " + w)
     lines.append("")
     if summary.get("by_user"):
-        lines += _group_table("By user", summary["by_user"])
+        lines += _group_table("By user", summary["by_user"], top)
     if summary.get("by_partition"):
-        lines += _group_table("By partition", summary["by_partition"])
+        lines += _group_table("By partition", summary["by_partition"], top)
     trend = summary.get("trend") or {"period": None, "rows": []}
     if len(trend["rows"]) >= 2:
         lines += _group_table("Trend by %s" % trend["period"], trend["rows"])
