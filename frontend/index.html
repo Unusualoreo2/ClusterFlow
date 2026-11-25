@@ -157,6 +157,20 @@
             display: none;
         }
 
+        .warnings-box {
+            background: #fff8e1;
+            border: 1px solid #f0d48a;
+            border-radius: var(--border-radius);
+            padding: 12px 16px;
+            margin: 16px 0;
+            color: #6b5000;
+        }
+
+        .warnings-box ul {
+            margin: 6px 0 0 18px;
+            padding: 0;
+        }
+
         .jobs-note {
             color: var(--text-secondary);
             font-size: 0.9em;
@@ -343,6 +357,7 @@
             </div>
         </div>
 
+        <div id="warningsBox" class="warnings-box" style="display:none"></div>
         <div id="groupsSection"></div>
         <div id="arraysSection"></div>
         <p id="jobsNote" class="jobs-note" style="display:none"></p>
@@ -607,6 +622,22 @@
             cpuEfficiencyValue.textContent = data.summary.avg_cpu_efficiency !== null ? Math.round(data.summary.avg_cpu_efficiency) + '%' : '–';
             memoryEfficiencyValue.textContent = data.summary.avg_memory_efficiency !== null ? Math.round(data.summary.avg_memory_efficiency) + '%' : '–';
             wastedHoursValue.textContent = data.summary.total_wasted_core_hours !== null ? data.summary.total_wasted_core_hours.toFixed(1) : '–';
+
+            // Notes about columns the export lacks (built with textContent only)
+            const warningsBox = document.getElementById('warningsBox');
+            warningsBox.textContent = '';
+            const warnings = data.warnings || [];
+            if (warnings.length) {
+                const title = document.createElement('strong');
+                title.textContent = 'Some figures are not available for this export:';
+                warningsBox.appendChild(title);
+                const ul = document.createElement('ul');
+                warnings.forEach(w => { const li = document.createElement('li'); li.textContent = w; ul.appendChild(li); });
+                warningsBox.appendChild(ul);
+                warningsBox.style.display = '';
+            } else {
+                warningsBox.style.display = 'none';
+            }
 
             // Queue wait card (only when the export has Submit/Start)
             const hasWait = data.summary.avg_wait_s !== null && data.summary.avg_wait_s !== undefined;
