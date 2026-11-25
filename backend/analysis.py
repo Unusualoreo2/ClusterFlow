@@ -327,9 +327,10 @@ def analyze_job(job):
     state = job.get("State", "")
     elapsed_str = job.get("Elapsed", "")
     timelimit_str = job.get("Timelimit", "")
-    alloc_cpus_str = job.get("AllocCPUS", "")
+    tres = parse_tres(job.get("AllocTRES")) or parse_tres(job.get("ReqTRES"))
+    alloc_cpus_str = job.get("AllocCPUS") or job.get("NCPUS") or tres.get("cpu", "")
     total_cpu_str = job.get("TotalCPU", "")
-    req_mem_str = job.get("ReqMem", "")
+    req_mem_str = job.get("ReqMem") or tres.get("mem", "")
     max_rss_str = job.get("MaxRSS", "")
     
     # Parse durations
@@ -644,6 +645,26 @@ def summarize_arrays(results):
     return entries
 
 
+def _column_warnings(headers):
+    """Plain-English notes about columns the export lacks, so the user knows which figures are unavailable."""
+    def has(*cols):
+        return any(c in headers for c in cols)
+    warnings = []
+    if not has("Elapsed"):
+        warnings.append("Elapsed column missing: efficiencies and wasted core-hours are not available.")
+    if not has("TotalCPU"):
+        warnings.append("TotalCPU column missing: CPU efficiency is not available.")
+    if not has("AllocCPUS", "NCPUS", "AllocTRES", "ReqTRES"):
+        warnings.append("AllocCPUS column missing: CPU efficiency is not available.")
+    if not has("MaxRSS"):
+        warnings.append("MaxRSS column missing: memory efficiency is not available.")
+    if not has("ReqMem", "AllocTRES", "ReqTRES"):
+        warnings.append("ReqMem column missing: memory efficiency is not available.")
+    if not has("Timelimit"):
+        warnings.append("Timelimit column missing: time-limit advice is not available.")
+    return warnings
+
+
 def analyze(text):
     """
     Analyze sacct output and return job analysis.
@@ -664,11 +685,12 @@ def analyze(text):
     if rows:
         headers = set(rows[0].keys())
     
-    required_columns = {"JobID", "State", "Elapsed", "AllocCPUS", "TotalCPU"}
+    required_columns = {"JobID", "State"}
     missing_columns = required_columns - headers
     
     if missing_columns:
-        raise ValueError(f"Missing columns in sacct header: {', '.join(missing_columns)}")
+        raise ValueError("Missing columns in sacct header: %s. Export with: %s"
+                         % (", ".join(sorted(missing_columns)), EXPORT_COMMAND))
     
     # Merge steps
     jobs = merge_steps(rows)
@@ -734,6 +756,7 @@ def analyze(text):
     return {
         "jobs": analyzed_jobs,
         "skipped": skipped,
+        "warnings": _column_warnings(headers),
         "summary": {
             "job_count": job_count,
             "avg_cpu_efficiency": avg_cpu_efficiency,
