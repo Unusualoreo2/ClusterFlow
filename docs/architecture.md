@@ -54,6 +54,10 @@ Jobs in states RUNNING, PENDING, REQUEUED, SUSPENDED and RESIZING are skipped. R
 
 `wait_s = Start - Submit` in seconds (timestamps `YYYY-MM-DDTHH:MM:SS`; `Unknown`/`None` or Start before Submit give no value). Summary: `avg_wait_s`, `max_wait_s`; groups: `avg_wait_s`. Bad cell values anywhere are treated as missing, never as a reason to reject the file.
 
+## Real-world exports (v0.8)
+
+Tested against public `sacct` captures from real clusters. HPCFlow reads `|`, comma and tab separated exports, column names in any case (`maxrss` = `MaxRSS`), and only requires `JobID` and `State`. Missing columns are reported as `warnings` (e.g. no `TotalCPU` -> no CPU efficiency) instead of rejecting the file. Fallbacks: CPU count from `NCPUS` or `cpu=` in `AllocTRES`/`ReqTRES`; memory request from `mem=` in `AllocTRES`/`ReqTRES`. A job Slurm marks `FAILED` whose step ran `OUT_OF_MEMORY` is reported as `OUT_OF_MEMORY`. Unknown totals are `null`, never 0. Fixed-width output (exported without `-P`) is refused with the correct export command. Job arrays are summarised in `summary.arrays`; the web table shows at most the 200 most wasteful jobs (CSV has all).
+
 ## Components
 
 - `backend/analysis.py`: pure Python standard library, no pandas. Parsing, metrics and recommendations. Fully unit-tested.

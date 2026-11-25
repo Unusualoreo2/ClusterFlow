@@ -10,6 +10,10 @@ sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Subm
 
 Do not add `-X`: memory usage is recorded on the job steps, which HPCFlow merges into each job automatically.
 
+## Which exports work
+
+`|`, comma or tab separated `sacct` output with at least `JobID` and `State`. The more of the columns above you include, the more HPCFlow can tell you: any figure it cannot compute is listed as a note instead of being guessed. Output from `sacct` without `-P` (space-padded columns) is not supported.
+
 ## Run it on Windows
 
 ```powershell

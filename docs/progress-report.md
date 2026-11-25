@@ -57,6 +57,21 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - **Guide:** `docs/pilot-guide.md`, step by step, without guessing Kelvin2-specific settings.
 - Kelvin2 access requested (25 Nov 2026). 540 automated tests, all passing.
 
+## v0.7: scale and job arrays
+
+- **Scale measured:** 100,000 jobs analyse in about 2 seconds (linear); a performance test guards against slowdowns. No optimisation was needed.
+- **Job-array rollup:** one entry per array with task states, average efficiencies, peak memory and advice from completed tasks only (failed tasks reported separately), in the engine, CLI and web app.
+- **Web app shows at most 200 jobs** (most wasteful first); the CSV keeps all of them, so large uploads no longer freeze the browser.
+- **Cleanup:** removed duplicate, self-recursive helper functions left by an interrupted AI edit; a new test fails on any duplicate definition.
+
+## v0.8: real-world exports
+
+- **First contact with real data:** public `sacct` captures from real clusters (published in an open-source R package; kept outside this repository). **All 10 files were rejected at first.** Now every job-data file is read, including exports with 1,328 real jobs, tab-separated files, lowercase headers and partial columns.
+- **Partial exports:** only `JobID` and `State` are required; missing columns produce plain-English notes in the CLI and a yellow box in the web app instead of an error. CPU count and memory request fall back to `NCPUS` / `AllocTRES` / `ReqTRES`.
+- **Two real bugs fixed:** Slurm marks some jobs `FAILED` when a step ran out of memory, so HPCFlow now reports `OUT_OF_MEMORY` with memory advice; and missing CPU data now shows wasted core-hours as unknown instead of 0.0.
+- **Market research kit** (`docs/market-research-kit.md`): prompts for Gemini Deep Research and NotebookLM, with a verification step before results enter the company plan.
+- 578 automated tests, all passing.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.

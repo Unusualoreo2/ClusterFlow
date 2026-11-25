@@ -11,6 +11,10 @@ sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Subm
 
 Do not add `-X`: memory usage is recorded on the job steps, and HPCFlow merges them into each job automatically. Change `now-7days` to cover a different period.
 
+## If some figures are missing
+
+If your export lacks some columns, HPCFlow still analyses it and shows a yellow note listing what is not available (for example "TotalCPU column missing: CPU efficiency is not available"). Re-export with the full command above to get every figure.
+
 ## Upload or paste
 
 You can upload a sacct file or paste its contents directly in the web interface.
