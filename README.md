@@ -20,6 +20,19 @@ powershell -ExecutionPolicy Bypass -File scripts\run.ps1
 
 Open http://127.0.0.1:8000
 
+## Run it on the cluster (command line)
+
+Copy `backend/analysis.py` and `backend/hpcflow_cli.py` to the cluster (Python 3.7+, standard library only), then on a login node:
+
+```bash
+python3 hpcflow_cli.py                 # runs sacct for your jobs of the last 7 days
+python3 hpcflow_cli.py --days 30 --top 10
+python3 hpcflow_cli.py jobs.txt --csv report.csv
+sacct -P ... | python3 hpcflow_cli.py -
+```
+
+Options: `--all-users` (admins: adds `-a` to sacct), `--json` (machine-readable output). No data leaves the cluster.
+
 ## Run it with Docker
 
 ```bash
