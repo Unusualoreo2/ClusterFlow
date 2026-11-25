@@ -804,6 +804,21 @@ def report(result, top):
         lines += _group_table("By user", summary["by_user"])
     if summary.get("by_partition"):
         lines += _group_table("By partition", summary["by_partition"])
+    arrays = summary.get("arrays", [])
+    if arrays:
+        shown = arrays[:max(0, top)]
+        title = "Job arrays (%d)" % len(arrays)
+        if len(shown) < len(arrays):
+            title = "Job arrays (%d, showing %d)" % (len(arrays), len(shown))
+        lines.append(title)
+        for r in shown:
+            states = ", ".join("%d %s" % (n, s) for s, n in sorted(r["states"].items(), key=lambda kv: (-kv[1], kv[0])))
+            lines.append("  %s  %s  %d tasks (%s)  CPU %s  MEM %s  WASTED %.1f" % (
+                r["array_id"], r["name"], r["task_count"], states, pct(r["avg_cpu_efficiency"]),
+                pct(r["avg_memory_efficiency"]), r["wasted_core_hours"] or 0))
+            for rec in r["recommendations"]:
+                lines.append("    - " + rec)
+        lines.append("")
 
     jobs = sorted(result["jobs"], key=lambda j: -(j["wasted_core_hours"] or 0))[:max(0, top)]
     lines.append("Top %d jobs by wasted core-hours" % len(jobs))
@@ -847,6 +862,15 @@ def anonymise(result):
             j["user"] = label(users, j["user"], "user")
         j["name"] = label(names, j.get("name", ""), "job")
         j["job_id"] = label(ids, j.get("job_id", ""), "J")
+    arrays = {}
+    for r in out.get("summary", {}).get("arrays", []):
+        r["array_id"] = label(arrays, r["array_id"], "A")
+        r["name"] = label(names, r.get("name", ""), "job")
+        if r.get("user"):
+            r["user"] = label(users, r["user"], "user")
+    for j in out["jobs"]:
+        if j.get("array_id"):
+            j["array_id"] = label(arrays, j["array_id"], "A")
     for g in out.get("summary", {}).get("by_user", []):
         if g["name"] != "(unknown)":
             g["name"] = label(users, g["name"], "user")
