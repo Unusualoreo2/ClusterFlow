@@ -1,72 +1,65 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
-import pandas as pd
-import io
-import os
+from pathlib import Path
+from analysis import analyze
+from pydantic import BaseModel
 
-# Import analysis module
-from analysis import parse_sacct, roofline_analysis
+# Constants
+FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
+MAX_BYTES = 10 * 1024 * 1024
 
-# Initialize FastAPI app
-app = FastAPI(title="HPCFlow - HPC Job Performance Analyzer")
+# Create FastAPI app
+app = FastAPI(title="HPCFlow", version="0.2.0")
 
-# Optional: Add CORS if used with frontend
-# from fastapi.middleware.cors import CORSMiddleware
-# app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-# Define expected hardware peak values (can be updated)
-PEAK_FLOPS = 1e12  # 1 TFLOPS
-PEAK_MEM_BW = 100e9  # 100 GB/s
+@app.get("/api/health")
+async def health():
+    return {"status": "ok"}
 
 @app.get("/")
-async def home():
-    return {
-        "message": "Welcome to HPCFlow - HPC Job Performance Analyzer",
-        "endpoints": ["/analyze", "/docs", "/redoc"]
-    }
+async def read_root():
+    from fastapi.responses import FileResponse
+    return FileResponse(FRONTEND, media_type="text/html")
 
-@app.post("/analyze")
-async def analyze_job(file: UploadFile):
-    """
-    Upload a Slurm sacct CSV file and return performance insight.
-    """
-    # Validate file type
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="File must be a CSV")
+async def _run(raw: bytes) -> dict:
+    # Check file size
+    if len(raw) > MAX_BYTES:
+        raise HTTPException(413, "File is larger than 10 MB.")
+    
+    # Check for empty or whitespace-only files
+    if not raw or not raw.strip():
+        raise HTTPException(400, "The file is empty.")
+    
+    # Check for null bytes or invalid UTF-8
+    if b"\x00" in raw:
+        raise HTTPException(400, "This does not look like a text sacct export.")
     
     try:
-        # Read file content
-        content = await file.read()
-        df = pd.read_csv(io.StringIO(content.decode()))
-        
-        # Parse and analyze
-        df = parse_sacct(df)
-        insight = roofline_analysis(df, peak_flops=PEAK_FLOPS, peak_mem_bw=PEAK_MEM_BW)
-        
-        # Return result
-        return {
-            "status": "success",
-            "job_id": df["JobID"].iloc[0],
-            "elapsed_seconds": df["Elapsed_s"].iloc[0],
-            "cpu_util_percent": round(df["CPU_util_percent"].iloc[0], 2),
-            "memory_bandwidth_GB": round(df["Memory_bandwidth_GB"].iloc[0], 2),
-            "insight": insight
-        }
+        text = raw.decode("utf-8-sig")
+    except UnicodeError:
+        raise HTTPException(400, "This does not look like a text sacct export.")
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+    # Call analysis
+    try:
+        result = analyze(text)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
+    
+    return result
 
-@app.get("/docs")
-async def get_docs():
-    return FileResponse("./docs/swagger-ui.html")
+@app.post("/api/analyze")
+async def analyze_file(file: UploadFile = File(...)):
+    # Read at most MAX_BYTES + 1 bytes to check size
+    content = await file.read(MAX_BYTES + 1)
+    
+    # Check if file is too large
+    if len(content) > MAX_BYTES:
+        raise HTTPException(413, "File is larger than 10 MB.")
+    
+    return await _run(content)
 
-# Optional: Serve static files (for frontend)
-@app.get("/static/{file_name}")
-async def serve_static(file_name: str):
-    file_path = os.path.join("./frontend", file_name)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path)
+class TextIn(BaseModel):
+    text: str
 
-# Run with: uvicorn main:app --reload
-# Then visit http://localhost:8000
+@app.post("/api/analyze-text")
+async def analyze_text(request: TextIn):
+    return await _run(request.text.encode("utf-8"))
