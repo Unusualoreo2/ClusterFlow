@@ -556,7 +556,7 @@ def analyze_job(job):
     # CPU efficiency recommendation
     if completed and cpu_efficiency is not None and cpu_efficiency < 50 and alloc_cpus > 1:
         new_cpus = max(1, ceil(alloc_cpus * cpu_efficiency / 100 * 1.2))
-        recommendations.append(f"CPU efficiency is {cpu_efficiency:.1f}%: request --cpus-per-task={new_cpus} CPUs instead of {alloc_cpus}, or check the code really runs in parallel.")
+        recommendations.append(f"CPU efficiency is {cpu_efficiency:.1f}%: request --cpus-per-task={new_cpus} instead of {alloc_cpus}, or check the code really runs in parallel.")
     
     if completed and memory_efficiency is not None and memory_efficiency < 50:
         new_mem = ceil(max_rss_mb * 1.25) if max_rss_mb is not None else None
@@ -1127,6 +1127,10 @@ def report(result, top):
         "Wasted core-hours:     %s" % ("-" if summary["total_wasted_core_hours"] is None
                                         else num(summary["total_wasted_core_hours"])),
     ]
+    if result.get("cluster"):
+        c = result["cluster"]
+        lines.insert(3, "Cluster average:       CPU %s, memory %s (%d users)"
+                     % (pct(c["avg_cpu_efficiency"]), pct(c["avg_memory_efficiency"]), c["users"]))
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
         lines.append("Max queue wait:        %s" % fmt_wait(summary["max_wait_s"]))
@@ -1391,12 +1395,15 @@ def anonymise(result):
     return out
 
 
-def write_user_reports(text, args):
+def write_user_reports(text, args, cluster_summary):
     """One HTML report per non-empty user in DIR, each covering only that user's jobs (text parsed once)."""
     per_user = analyze_by_user(text)
     try:
         os.makedirs(args.split_by_user, exist_ok=True)
+        cluster = {"avg_cpu_efficiency": cluster_summary["avg_cpu_efficiency"],
+                   "avg_memory_efficiency": cluster_summary["avg_memory_efficiency"], "users": len(per_user)}
         for u, result in per_user.items():
+            result["cluster"] = cluster
             cost = estimate_cost(result["summary"], args.cpu_hour_cost, args.gpu_hour_cost, args.currency)
             if cost:
                 result["cost"] = cost
@@ -1484,7 +1491,7 @@ def main(argv=None):
         except OSError as e:
             fail("cannot write HTML report: %s" % e)
     if args.split_by_user:
-        write_user_reports(text, args)
+        write_user_reports(text, args, result["summary"])
 
     return 0
 

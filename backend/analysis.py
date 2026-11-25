@@ -552,7 +552,7 @@ def analyze_job(job):
     # CPU efficiency recommendation
     if completed and cpu_efficiency is not None and cpu_efficiency < 50 and alloc_cpus > 1:
         new_cpus = max(1, ceil(alloc_cpus * cpu_efficiency / 100 * 1.2))
-        recommendations.append(f"CPU efficiency is {cpu_efficiency:.1f}%: request --cpus-per-task={new_cpus} CPUs instead of {alloc_cpus}, or check the code really runs in parallel.")
+        recommendations.append(f"CPU efficiency is {cpu_efficiency:.1f}%: request --cpus-per-task={new_cpus} instead of {alloc_cpus}, or check the code really runs in parallel.")
     
     if completed and memory_efficiency is not None and memory_efficiency < 50:
         new_mem = ceil(max_rss_mb * 1.25) if max_rss_mb is not None else None
