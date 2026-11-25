@@ -50,6 +50,16 @@ docker run -p 8000:8000 hpcflow
 
 If your export includes `AllocTRES` (and, on clusters with GPU accounting, `TRESUsageInAve`), HPCFlow reports GPU-hours, average GPU utilisation and advice for idle GPUs, overall, per user and per job.
 
+## Cost of waste
+
+HPCFlow never guesses prices. Give it your centre's rates and it prices the waste:
+
+```bash
+python3 hpcflow.py --cpu-hour-cost 0.02 --gpu-hour-cost 1.50 --currency £
+```
+
+The web app has a "Price the waste" box for the same. Wasted CPU time = allocated minus used core-hours; idle GPU time = GPU-hours x (100% - GPU utilisation).
+
 ## API
 
 - `GET /` serves the frontend

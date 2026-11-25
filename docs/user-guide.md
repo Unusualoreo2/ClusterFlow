@@ -49,6 +49,10 @@ If you used GPUs, the "GPU-hours" card shows how many GPU-hours your jobs held a
 
 If your export covers more than one day, a "Trend by day" (or, for longer periods, "Trend by week") table shows whether efficiency and waste are improving. Export a longer period, for example with `-S now-30days`, to see weekly trends.
 
+## What the waste costs
+
+Enter your centre's price per core-hour (and per GPU-hour) in the "Price the waste" box, or use `--cpu-hour-cost` / `--gpu-hour-cost` on the command line. Ask your HPC team for the rates they charge or budget with; HPCFlow does not assume any.
+
 ## Recommendations
 
 HPCFlow suggests how to improve your next job:
