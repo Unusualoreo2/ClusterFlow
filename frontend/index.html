@@ -668,12 +668,12 @@
         function renderWaitByLimit(bands) {
             if (bands.length < 2) return;
             const heading = document.createElement('h3');
-            heading.textContent = 'Queue wait by time limit (median)';
+            heading.textContent = 'Queue wait by time limit';
             groupsSection.appendChild(heading);
             const table = document.createElement('table');
             table.className = 'groups-table';
             const head = table.createTHead().insertRow();
-            ['Time limit', 'Jobs', 'Median wait'].forEach(t => {
+            ['Time limit', 'Jobs', 'Median wait', '90% started within'].forEach(t => {
                 const th = document.createElement('th');
                 th.textContent = t;
                 head.appendChild(th);
@@ -681,11 +681,13 @@
             const body = table.createTBody();
             bands.forEach(b => {
                 const row = body.insertRow();
-                [b.label, b.jobs, fmtWait(b.median_wait_s)].forEach(v => { row.insertCell().textContent = String(v); });
+                [b.label, b.jobs, fmtWait(b.median_wait_s), fmtWait(b.p90_wait_s)].forEach(v => { row.insertCell().textContent = String(v); });
             });
             groupsSection.appendChild(table);
             const note = document.createElement('p');
-            note.textContent = 'Shorter limits can start sooner (Slurm backfill). These are waits on this data, not a promise.';
+            note.textContent = bands[bands.length - 1].p90_wait_s > bands[0].p90_wait_s
+                ? 'Longer limits waited longer here (90% mark): shorter limits can start sooner via Slurm backfill. Not a promise.'
+                : 'Waits did not grow with the time limit on this data.';
             groupsSection.appendChild(note);
         }
 

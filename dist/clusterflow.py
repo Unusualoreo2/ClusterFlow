@@ -453,7 +453,7 @@ def summarize_wait_by_limit(results):
             if top is None or j["timelimit_s"] <= top:
                 waits[label].append(j["wait_s"])
                 break
-    return [{"label": label, "jobs": len(waits[label]), "median_wait_s": float(percentile(waits[label], 50))}
+    return [{"label": label, "jobs": len(waits[label]), "median_wait_s": float(percentile(waits[label], 50)), "p90_wait_s": float(percentile(waits[label], 90))}
             for label, _ in WAIT_BANDS if waits[label]]
 
 
@@ -1189,11 +1189,14 @@ def report(result, top):
         lines += _group_table("Trend by %s" % trend["period"], trend["rows"])
     bands = summary.get("wait_by_limit") or []
     if len(bands) >= 2:
-        lines.append("Queue wait by time limit (median)")
+        lines.append("Queue wait by time limit")
         for b in bands:
-            lines.append("  %-12s %8s %-4s  wait %s" % (b["label"], num(b["jobs"], 0), "job" if b["jobs"] == 1 else "jobs",
-                                                     fmt_wait(b["median_wait_s"])))
-        lines.append("  Shorter limits can start sooner (Slurm backfill). These are waits on this data, not a promise.")
+            lines.append("  %-12s %8s %-4s  median %-8s 90%% within %s" % (b["label"], num(b["jobs"], 0), "job" if b["jobs"] == 1 else "jobs",
+                                                     fmt_wait(b["median_wait_s"]), fmt_wait(b["p90_wait_s"])))
+        if bands[-1]["p90_wait_s"] > bands[0]["p90_wait_s"]:
+            lines.append("  Longer limits waited longer here (90% mark): shorter limits can start sooner via Slurm backfill. Not a promise.")
+        else:
+            lines.append("  Waits did not grow with the time limit on this data.")
         lines.append("")
     profiles = [p for p in summary.get("profiles", []) if p["recommendations"]][:max(0, top)]
     if profiles:

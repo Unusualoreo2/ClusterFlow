@@ -449,7 +449,7 @@ def summarize_wait_by_limit(results):
             if top is None or j["timelimit_s"] <= top:
                 waits[label].append(j["wait_s"])
                 break
-    return [{"label": label, "jobs": len(waits[label]), "median_wait_s": float(percentile(waits[label], 50))}
+    return [{"label": label, "jobs": len(waits[label]), "median_wait_s": float(percentile(waits[label], 50)), "p90_wait_s": float(percentile(waits[label], 90))}
             for label, _ in WAIT_BANDS if waits[label]]
 
 
