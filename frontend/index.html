@@ -331,6 +331,10 @@
                 <div class="card-value" id="wastedHoursValue">–</div>
                 <div class="card-label">Wasted core-hours</div>
             </div>
+            <div class="card" id="waitCard" style="display:none">
+                <div class="card-value" id="waitValue">–</div>
+                <div class="card-label">Avg queue wait</div>
+            </div>
         </div>
 
         <div id="groupsSection"></div>
@@ -345,6 +349,7 @@
                 <th>Memory %</th>
                 <th>Time used %</th>
                 <th>Wasted core-h.</th>
+                <th>Queue wait</th>
             </tr>
             </thead>
             <tbody id="tableBody">
@@ -487,6 +492,17 @@
                 });
         }
 
+        // Seconds -> '<1m', '30m', '1h 05m', '1d 02h' (same as the CLI)
+        function fmtWait(s) {
+            if (s === null || s === undefined) return '–';
+            s = Math.floor(s);
+            const pad = n => String(n).padStart(2, '0');
+            if (s < 60) return '<1m';
+            if (s < 3600) return Math.floor(s / 60) + 'm';
+            if (s < 86400) return Math.floor(s / 3600) + 'h ' + pad(Math.floor((s % 3600) / 60)) + 'm';
+            return Math.floor(s / 86400) + 'd ' + pad(Math.floor((s % 86400) / 3600)) + 'h';
+        }
+
         // Bar colour for an efficiency percentage
         function effColor(v) {
             if (v === null || v === undefined) return '#cccccc';
@@ -546,6 +562,11 @@
             cpuEfficiencyValue.textContent = data.summary.avg_cpu_efficiency !== null ? Math.round(data.summary.avg_cpu_efficiency) + '%' : '–';
             memoryEfficiencyValue.textContent = data.summary.avg_memory_efficiency !== null ? Math.round(data.summary.avg_memory_efficiency) + '%' : '–';
             wastedHoursValue.textContent = data.summary.total_wasted_core_hours !== null ? data.summary.total_wasted_core_hours.toFixed(1) : '–';
+
+            // Queue wait card (only when the export has Submit/Start)
+            const hasWait = data.summary.avg_wait_s !== null && data.summary.avg_wait_s !== undefined;
+            document.getElementById('waitCard').style.display = hasWait ? '' : 'none';
+            document.getElementById('waitValue').textContent = fmtWait(data.summary.avg_wait_s);
 
             // Per-user / per-partition tables
             groupsSection.textContent = '';
@@ -631,6 +652,10 @@
                 wastedCell.textContent = job.wasted_core_hours !== null ? job.wasted_core_hours.toFixed(1) : '–';
                 row.appendChild(wastedCell);
 
+                const waitCell = document.createElement('td');
+                waitCell.textContent = fmtWait(job.wait_s);
+                row.appendChild(waitCell);
+
                 tableBody.appendChild(row);
 
                 // Recommendations row
@@ -638,7 +663,7 @@
                     const recommendationsRow = document.createElement('tr');
                     recommendationsRow.className = 'recommendations-row';
                     const recommendationsCell = document.createElement('td');
-                    recommendationsCell.colSpan = 7;
+                    recommendationsCell.colSpan = 8;
                     const recommendationsList = document.createElement('ul');
                     recommendationsList.className = 'recommendations-list';
                     job.recommendations.forEach(rec => {
@@ -653,7 +678,7 @@
                     const noRecRow = document.createElement('tr');
                     noRecRow.className = 'recommendations-row';
                     const noRecCell = document.createElement('td');
-                    noRecCell.colSpan = 7;
+                    noRecCell.colSpan = 8;
                     noRecCell.textContent = '✓ Resources well sized.';
                     noRecCell.style.color = '#2f9e5b';
                     noRecRow.appendChild(noRecCell);
