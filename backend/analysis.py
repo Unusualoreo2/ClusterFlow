@@ -394,6 +394,9 @@ def analyze_job(job):
         "time_used": time_used,
         "wasted_core_hours": wasted_core_hours,
         "wait_s": wait_s,
+        "array_id": job_id.split(".")[0].split("_")[0] if "_" in job_id.split(".")[0] else None,
+        "max_rss_mb": max_rss_mb,
+        "req_mem_mb": req_mem_mb,
         "recommendations": recommendations,
         "user": job.get("User", "") or "",
         "partition": job.get("Partition", "") or ""
