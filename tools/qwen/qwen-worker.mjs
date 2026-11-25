@@ -23,6 +23,14 @@ function safe(p = ".") {
   return full;
 }
 
+// Tests are the architect's spec: Qwen may read them but never change them.
+function writable(p) {
+  const full = safe(p);
+  const top = path.relative(ROOT, full).split(path.sep)[0];
+  if (top === "tests") throw new Error(`tests/ is read-only (the tests are the spec): change the code instead, not ${p}`);
+  return full;
+}
+
 const tools = {
   list_files: {
     d: "List files and folders in a project folder (relative path, '.' = project root).",
@@ -54,7 +62,7 @@ const tools = {
     d: "Create or completely replace a file in the project. Always pass the COMPLETE file content.",
     p: { path: "File path", content: "Complete file content" }, req: ["path", "content"],
     run: async ({ path: p, content = "" }) => {
-      const f = safe(p); await fs.mkdir(path.dirname(f), { recursive: true });
+      const f = writable(p); await fs.mkdir(path.dirname(f), { recursive: true });
       await fs.writeFile(f, content, "utf8"); return `Wrote ${content.length} chars to ${p}`;
     },
   },
@@ -63,7 +71,7 @@ const tools = {
        "old_text must match the file exactly (without the line-number prefixes read_file shows) and appear once.",
     p: { path: "File path", old_text: "Exact text to find", new_text: "Replacement text" }, req: ["path", "old_text", "new_text"],
     run: async ({ path: p, old_text, new_text = "" }) => {
-      const f = safe(p); const src = (await fs.readFile(f, "utf8")).replace(/\r\n/g, "\n");
+      const f = writable(p); const src = (await fs.readFile(f, "utf8")).replace(/\r\n/g, "\n");
       const unprefix = t => t.replace(/\r\n/g, "\n").replace(/^ *\d+\| /gm, "");
       if (src.split(old_text).length === 1) { old_text = unprefix(old_text); new_text = unprefix(new_text); }
       let n = src.split(old_text).length - 1;
