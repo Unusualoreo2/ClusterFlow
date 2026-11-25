@@ -2,228 +2,645 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HPCFlow - HPC Job Performance Analyzer</title>
-    <meta name="description" content="Analyze HPC job performance with Roofline insights. Fast, lightweight, open-source. Built for researchers and engineers.">
-    <meta name="keywords" content="HPC, Slurm, Roofline, performance, analysis, Python, FastAPI, HPCFlow">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22none%22 stroke=%22#0066cc%22 stroke-width=%228%22/><text x=%2250%22 y=%2255%22 font-size=%2212%22 font-family=%22Arial%22 text-anchor=%22middle%22 fill=%22#0066cc%22>⚡</text></svg>" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#0066cc',
-                        secondary: '#004d99',
-                        accent: '#0088ff',
-                        dark: '#1a1a1a',
-                        light: '#f8f9fa'
-                    }
-                }
-            }
-        }
-    </script>
+    <title>HPCFlow</title>
     <style>
-        .btn {
-            @apply bg-primary hover:bg-secondary text-white font-medium py-2 px-4 rounded transition-all duration-200 shadow-md hover:shadow-lg;
+        :root {
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --success-color: #2f9e5b;
+            --warning-color: #d08c00;
+            --error-color: #d64545;
+            --neutral-color: #5b7a99;
+            --border-radius: 8px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f6f7f9;
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .box {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .command-box pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn:hover {
+            background-color: #d0d0d0;
+        }
+
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .drop-zone:hover {
+            border-color: #999;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .textarea-container {
+            margin-top: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            font-family: monospace;
+            resize: vertical;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .analyze-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .analyze-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .example-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .example-btn:hover {
+            background-color: #545b62;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
         .card {
-            @apply bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            text-align: center;
         }
-        .card-header {
-            @apply bg-gray-50 px-6 py-4 border-b border-gray-200;
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: bold;
         }
-        .card-body {
-            @apply p-6;
+
+        .card-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
-        .alert {
-            @apply bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        .success {
-            @apply bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm;
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
         }
-        .input {
-            @apply border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent;
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
-        .progress {
-            @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+
+        .state-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
         }
-        .progress-bar {
-            @apply h-full bg-primary transition-all duration-300;
+
+        .badge-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .bar {
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 3px;
+        }
+
+        .cpu-bar {
+            background-color: var(--error-color);
+        }
+
+        .memory-bar {
+            background-color: var(--error-color);
+        }
+
+        .time-bar {
+            background-color: var(--neutral-color);
+        }
+
+        .bar-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .recommendations-row {
+            background-color: #f9f9f9;
+        }
+
+        .recommendations-list {
+            padding-left: 20px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .download-btn {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .download-btn:hover {
+            background-color: #218838;
+        }
+
+        .error-box {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
         }
     </style>
 </head>
-<body class="bg-light font-sans">
-
-<div class="container mx-auto px-4 py-12 max-w-4xl">
-    <header class="text-center mb-10">
-        <div class="inline-block mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="80" height="80">
-                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="8" stroke="#0066cc" />
-                <text x="50" y="55" font-size="12" font-family="Arial" text-anchor="middle" fill="#0066cc" font-weight="bold">⚡</text>
-            </svg>
-        </div>
-        <h1 class="text-4xl font-bold text-primary">HPCFlow</h1>
-        <p class="text-lg text-gray-600 mt-2">Analyze HPC job performance with Roofline insights</p>
+<body>
+<div class="container">
+    <header>
+        <h1>HPCFlow</h1>
+        <p class="subtitle">See how much of your Slurm request your jobs actually used.</p>
     </header>
 
-    <div class="card">
-        <div class="card-header">
-            <h2 class="text-xl font-semibold">Upload Slurm Job Log</h2>
-            <p class="text-sm text-gray-500">Upload a CSV from `sacct -j <jobid> --format=JobID,Elapsed,MaxRSS,MaxCPU,MaxVMSize,AllocNodes`</p>
-        </div>
-        <div class="card-body">
-            <form id="uploadForm" class="space-y-6">
-                <div>
-                    <label for="fileInput" class="block text-sm font-medium text-gray-700 mb-2">
-                        Select CSV File
-                    </label>
-                    <input type="file" id="fileInput" accept=".csv" class="input w-full" required>
-                </div>
-
-                <div class="flex items-center space-x-4">
-                    <button type="submit" class="btn flex items-center space-x-2">
-                        <span>⚡ Analyze Job</span>
-                    </button>
-                    <button type="button" id="resetBtn" class="btn text-sm px-3 text-gray-600 hover:text-gray-800">
-                        🔄 Reset
-                    </button>
-                </div>
-
-                <div id="progressBar" class="progress hidden">
-                    <div id="progressBarFill" class="progress-bar w-0"></div>
-                </div>
-            </form>
-
-            <div id="result" class="mt-6 hidden">
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-blue-800 mb-2">Insight</h3>
-                    <p id="insight" class="text-blue-700 text-sm leading-relaxed"></p>
-                </div>
-
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">CPU Utilization</p>
-                        <p id="cpuUtil" class="text-lg font-bold text-gray-800"></p>
-                    </div>
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Memory Bandwidth</p>
-                        <p id="memBandwidth" class="text-lg font-bold text-gray-800"></p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="error" class="mt-4 hidden">
-                <div class="alert">
-                    <p id="errorMsg"></p>
-                </div>
-            </div>
-        </div>
+    <div class="box command-box">
+        <h2>Export your jobs</h2>
+        <pre>sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt</pre>
+        <button class="copy-btn">Copy</button>
     </div>
 
-    <footer class="mt-12 text-center text-gray-500 text-sm">
-        <p>© 2026 HPCFlow | Built with Python, FastAPI, and React</p>
-        <p class="mt-1">Open-source: MIT License</p>
-        <p class="mt-2">
-            <a href="https://github.com/yourname/HPCFlow-MVP" class="text-primary hover:underline" target="_blank">View on GitHub</a>
-        </p>
-    </footer>
+    <div class="box">
+        <h2>Input</h2>
+        <div class="drop-zone" id="dropZone">
+            Drop jobs.txt here or choose a file
+        </div>
+        <input type="file" id="fileInput" class="file-input" accept=".txt">
+        <div class="textarea-container">
+            <textarea id="textArea" placeholder="…or paste sacct output"></textarea>
+        </div>
+        <div class="button-group">
+            <button class="analyze-btn" id="analyzeBtn">Analyse</button>
+            <button class="example-btn" id="exampleBtn">Try example data</button>
+        </div>
+        <div class="loading" id="loadingIndicator">Analysing…</div>
+    </div>
+
+    <div class="results-section" id="resultsSection">
+        <h2>Results</h2>
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-value" id="jobCountValue">–</div>
+                <div class="card-label">Jobs analysed</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="cpuEfficiencyValue">–</div>
+                <div class="card-label">Avg CPU efficiency</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="memoryEfficiencyValue">–</div>
+                <div class="card-label">Avg memory efficiency</div>
+            </div>
+            <div class="card">
+                <div class="card-value" id="wastedHoursValue">–</div>
+                <div class="card-label">Wasted core-hours</div>
+            </div>
+        </div>
+
+        <table id="resultsTable">
+            <thead>
+            <tr>
+                <th>Job ID</th>
+                <th>Name</th>
+                <th>State</th>
+                <th>CPU %</th>
+                <th>Memory %</th>
+                <th>Time used %</th>
+                <th>Wasted core-h.</th>
+            </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <button class="download-btn" id="downloadBtn">Download CSV</button>
+    </div>
 </div>
 
 <script>
-    // DOM Elements
-    const uploadForm = document.getElementById('uploadForm');
-    const fileInput = document.getElementById('fileInput');
-    const resultDiv = document.getElementById('result');
-    const errorDiv = document.getElementById('error');
-    const insightP = document.getElementById('insight');
-    const cpuUtilP = document.getElementById('cpuUtil');
-    const memBandwidthP = document.getElementById('memBandwidth');
-    const progressBar = document.getElementById('progressBar');
-    const progressBarFill = document.getElementById('progressBarFill');
-    const resetBtn = document.getElementById('resetBtn');
-    const errorMsgP = document.getElementById('errorMsg');
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const textArea = document.getElementById('textArea');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const exampleBtn = document.getElementById('exampleBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultsSection = document.getElementById('resultsSection');
+        const tableBody = document.getElementById('tableBody');
+        const jobCountValue = document.getElementById('jobCountValue');
+        const cpuEfficiencyValue = document.getElementById('cpuEfficiencyValue');
+        const memoryEfficiencyValue = document.getElementById('memoryEfficiencyValue');
+        const wastedHoursValue = document.getElementById('wastedHoursValue');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const copyBtn = document.querySelector('.copy-btn');
 
-    // Reset form
-    resetBtn.addEventListener('click', () => {
-        fileInput.value = '';
-        resultDiv.classList.add('hidden');
-        errorDiv.classList.add('hidden');
-        progressBar.classList.add('hidden');
-        progressBarFill.style.width = '0%';
-    });
+        // Copy command to clipboard
+        copyBtn.addEventListener('click', function () {
+            const command = 'sacct -P --units=M -S now-7days --format=JobID,JobName,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt';
+            navigator.clipboard.writeText(command).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 1500);
+            });
+        });
 
-    // Upload form
-    uploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const file = fileInput.files[0];
-        if (!file) return;
+        // Drag and drop file handling
+        dropZone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dropZone.style.borderColor = '#999';
+        });
 
-        const formData = new FormData();
-        formData.append('file', file);
+        dropZone.addEventListener('dragleave', function () {
+            dropZone.style.borderColor = '#ccc';
+        });
 
-        // Show progress
-        progressBar.classList.remove('hidden');
-        progressBarFill.style.width = '0%';
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
 
-        try {
-            const response = await fetch('/analyze', {
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                handleFile(this.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                textArea.value = e.target.result;
+                analyzeText(textArea.value);
+            };
+            reader.readAsText(file);
+        }
+
+        // Analyze button
+        analyzeBtn.addEventListener('click', function () {
+            analyzeText(textArea.value);
+        });
+
+        // Example button
+        exampleBtn.addEventListener('click', function () {
+            fetch('/api/example')
+                .then(response => response.text())
+                .then(data => {
+                    textArea.value = data;
+                    analyzeText(data);
+                })
+                .catch(error => {
+                    showError("Failed to load example data: " + error.message);
+                });
+        });
+
+        // Loading state
+        function setLoading(state) {
+            if (state) {
+                loadingIndicator.style.display = 'block';
+                analyzeBtn.disabled = true;
+                exampleBtn.disabled = true;
+            } else {
+                loadingIndicator.style.display = 'none';
+                analyzeBtn.disabled = false;
+                exampleBtn.disabled = false;
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            const errorBox = document.createElement('div');
+            errorBox.className = 'error-box';
+            errorBox.textContent = message;
+            resultsSection.parentNode.insertBefore(errorBox, resultsSection);
+        }
+
+        // Analyze text
+        function analyzeText(text) {
+            setLoading(true);
+            fetch('/api/analyze-text', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({text: text})
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.detail || "Analysis failed");
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResults(data);
+                })
+                .catch(error => {
+                    showError("Error: " + error.message);
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        }
+
+        // Bar colour for an efficiency percentage
+        function effColor(v) {
+            if (v === null || v === undefined) return '#cccccc';
+            if (v < 50) return 'var(--error-color)';
+            if (v < 80) return 'var(--warning-color)';
+            return 'var(--success-color)';
+        }
+
+        // Quote a CSV cell; prefix formula-like values so spreadsheets don't execute them
+        function csvCell(v) {
+            let s = (v === null || v === undefined) ? '' : String(v);
+            if (/^[=+\-@]/.test(s)) s = "'" + s;
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+
+        // Display results
+        function displayResults(data) {
+            // Clear previous error messages
+            const existingError = document.querySelector('.error-box');
+            if (existingError) existingError.remove();
+
+            resultsSection.style.display = 'block';
+
+            // Update summary cards
+            jobCountValue.textContent = data.jobs.length;
+            if (data.skipped > 0) {
+                jobCountValue.textContent += ` (${data.skipped} running/pending skipped)`;
+            }
+            cpuEfficiencyValue.textContent = data.summary.avg_cpu_efficiency !== null ? Math.round(data.summary.avg_cpu_efficiency) + '%' : '–';
+            memoryEfficiencyValue.textContent = data.summary.avg_memory_efficiency !== null ? Math.round(data.summary.avg_memory_efficiency) + '%' : '–';
+            wastedHoursValue.textContent = data.summary.total_wasted_core_hours !== null ? data.summary.total_wasted_core_hours.toFixed(1) : '–';
+
+            // Clear table body
+            tableBody.innerHTML = '';
+
+            // Populate table rows
+            data.jobs.forEach(job => {
+                const row = document.createElement('tr');
+
+                // Job ID
+                const jobIdCell = document.createElement('td');
+                jobIdCell.textContent = job.job_id;
+                row.appendChild(jobIdCell);
+
+                // Name
+                const nameCell = document.createElement('td');
+                nameCell.textContent = job.name;
+                row.appendChild(nameCell);
+
+                // State
+                const stateCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = 'state-badge';
+                if (job.state === 'OUT_OF_MEMORY' || job.state === 'TIMEOUT' || job.state === 'FAILED') {
+                    badge.classList.add('badge-failed');
+                } else if (job.state === 'COMPLETED') {
+                    badge.classList.add('badge-completed');
+                } else {
+                    badge.style.backgroundColor = '#f0f0f0';
+                    badge.style.color = '#333';
+                }
+                badge.textContent = job.state;
+                stateCell.appendChild(badge);
+                row.appendChild(stateCell);
+
+                // CPU %
+                const cpuCell = document.createElement('td');
+                const cpuValue = job.cpu_efficiency !== null ? Math.round(job.cpu_efficiency) : '–';
+                cpuCell.textContent = cpuValue;
+                const cpuBarContainer = document.createElement('div');
+                cpuBarContainer.className = 'bar-container';
+                const cpuBar = document.createElement('div');
+                cpuBar.className = 'bar cpu-bar';
+                cpuBar.style.width = Math.min(cpuValue, 100) + '%';
+                cpuBar.style.backgroundColor = effColor(job.cpu_efficiency);
+                cpuBarContainer.appendChild(cpuBar);
+                cpuCell.appendChild(cpuBarContainer);
+                row.appendChild(cpuCell);
+
+                // Memory %
+                const memoryCell = document.createElement('td');
+                const memoryValue = job.memory_efficiency !== null ? Math.round(job.memory_efficiency) : '–';
+                memoryCell.textContent = memoryValue;
+                const memoryBarContainer = document.createElement('div');
+                memoryBarContainer.className = 'bar-container';
+                const memoryBar = document.createElement('div');
+                memoryBar.className = 'bar memory-bar';
+                memoryBar.style.width = Math.min(memoryValue, 100) + '%';
+                memoryBar.style.backgroundColor = effColor(job.memory_efficiency);
+                memoryBarContainer.appendChild(memoryBar);
+                memoryCell.appendChild(memoryBarContainer);
+                row.appendChild(memoryCell);
+
+                // Time used %
+                const timeCell = document.createElement('td');
+                const timeValue = job.time_used !== null ? Math.round(job.time_used) : '–';
+                timeCell.textContent = timeValue;
+                const timeBarContainer = document.createElement('div');
+                timeBarContainer.className = 'bar-container';
+                const timeBar = document.createElement('div');
+                timeBar.className = 'bar time-bar';
+                timeBar.style.width = Math.min(timeValue, 100) + '%';
+                timeBarContainer.appendChild(timeBar);
+                timeCell.appendChild(timeBarContainer);
+                row.appendChild(timeCell);
+
+                // Wasted core-h
+                const wastedCell = document.createElement('td');
+                wastedCell.textContent = job.wasted_core_hours !== null ? job.wasted_core_hours.toFixed(1) : '–';
+                row.appendChild(wastedCell);
+
+                tableBody.appendChild(row);
+
+                // Recommendations row
+                if (job.recommendations && job.recommendations.length > 0) {
+                    const recommendationsRow = document.createElement('tr');
+                    recommendationsRow.className = 'recommendations-row';
+                    const recommendationsCell = document.createElement('td');
+                    recommendationsCell.colSpan = 7;
+                    const recommendationsList = document.createElement('ul');
+                    recommendationsList.className = 'recommendations-list';
+                    job.recommendations.forEach(rec => {
+                        const li = document.createElement('li');
+                        li.textContent = rec;
+                        recommendationsList.appendChild(li);
+                    });
+                    recommendationsCell.appendChild(recommendationsList);
+                    recommendationsRow.appendChild(recommendationsCell);
+                    tableBody.appendChild(recommendationsRow);
+                } else {
+                    const noRecRow = document.createElement('tr');
+                    noRecRow.className = 'recommendations-row';
+                    const noRecCell = document.createElement('td');
+                    noRecCell.colSpan = 7;
+                    noRecCell.textContent = '✓ Resources well sized.';
+                    noRecCell.style.color = '#2f9e5b';
+                    noRecRow.appendChild(noRecCell);
+                    tableBody.appendChild(noRecRow);
+                }
             });
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.detail || 'Unknown error');
-            }
+            // Download button
+            downloadBtn.onclick = function () {
+                const csvContent = [
+                    ['Job ID', 'Name', 'State', 'CPU %', 'Memory %', 'Time used %', 'Wasted core-h.', 'Recommendations'],
+                    ...data.jobs.map(job => [
+                        job.job_id,
+                        job.name,
+                        job.state,
+                        job.cpu_efficiency !== null ? Math.round(job.cpu_efficiency) : '',
+                        job.memory_efficiency !== null ? Math.round(job.memory_efficiency) : '',
+                        job.time_used !== null ? Math.round(job.time_used) : '',
+                        job.wasted_core_hours !== null ? job.wasted_core_hours.toFixed(1) : '',
+                        job.recommendations ? job.recommendations.join(' | ') : ''
+                    ])
+                ].map(row => row.map(csvCell).join(',')).join('\r\n');
 
-            const data = await response.json();
-
-            // Update UI
-            insightP.textContent = data.insight;
-            cpuUtilP.textContent = `${data.cpu_util_percent}%`;
-            memBandwidthP.textContent = `${data.memory_bandwidth_GB} GB/s`;
-
-            resultDiv.classList.remove('hidden');
-            errorDiv.classList.add('hidden');
-            progressBar.classList.add('hidden');
-
-            // Add success animation
-            resultDiv.style.opacity = '0';
-            resultDiv.style.transform = 'translateY(10px)';
-            setTimeout(() => {
-                resultDiv.style.transition = 'all 0.3s ease';
-                resultDiv.style.opacity = '1';
-                resultDiv.style.transform = 'translateY(0)';
-            }, 10);
-
-        } catch (err) {
-            errorMsgP.textContent = err.message;
-            errorDiv.classList.remove('hidden');
-            resultDiv.classList.add('hidden');
-            progressBar.classList.add('hidden');
-        }
-    });
-
-    // Real-time progress (simulated)
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files[0]) {
-            progressBarFill.style.width = '10%';
-            setTimeout(() => {
-                progressBarFill.style.width = '50%';
-            }, 300);
-            setTimeout(() => {
-                progressBarFill.style.width = '100%';
-            }, 600);
-        }
-    });
-
-    // Validate file type
-    fileInput.addEventListener('change', () => {
-        const file = fileInput.files[0];
-        if (file && !file.name.endsWith('.csv')) {
-            alert('Please upload a .csv file');
-            fileInput.value = '';
+                const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'hpcflow_report.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            };
         }
     });
 </script>

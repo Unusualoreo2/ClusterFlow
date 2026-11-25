@@ -61,3 +61,8 @@ def test_empty_and_binary_files_give_400():
 def test_too_large_file_gives_413():
     big = b"JobID|State|Elapsed|AllocCPUS|TotalCPU\n" + b"1|COMPLETED|00:10:00|1|00:10:00\n" * 400000  # > 10 MB
     assert client.post("/api/analyze", files={"file": ("big.txt", big, "text/plain")}).status_code == 413
+
+
+def test_example_endpoint():
+    r = client.get("/api/example")
+    assert r.status_code == 200 and r.text.startswith("JobID|")
