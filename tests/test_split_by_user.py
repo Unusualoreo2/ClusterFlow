@@ -119,11 +119,14 @@ def test_analyze_by_user_is_not_quadratic():
     rows = "".join("%d|sim|u%03d|COMPLETED|01:00:00|04:00:00|8|02:00:00|16G|\n"
                    "%d.batch|batch||COMPLETED|01:00:00||8|02:00:00||3000M\n" % (i, i % 200, i) for i in range(20000))
     text = HDR + rows
-    t = time.perf_counter()
-    analysis.analyze(text)
-    one = time.perf_counter() - t
-    t = time.perf_counter()
-    by = analysis.analyze_by_user(text)
-    split = time.perf_counter() - t
+    def best(fn):                                     # best of 3: steady when the machine is busy
+        times = []
+        for _ in range(3):
+            t = time.perf_counter()
+            out = fn(text)
+            times.append(time.perf_counter() - t)
+        return min(times), out
+    one, _ = best(analysis.analyze)
+    split, by = best(analysis.analyze_by_user)
     assert len(by) == 200
     assert split < 3 * one + 1.0, "analyze_by_user took %.1fs vs %.1fs for one analysis" % (split, one)
