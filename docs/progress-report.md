@@ -72,6 +72,15 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - **Market research kit** (`docs/market-research-kit.md`): prompts for Gemini Deep Research and NotebookLM, with a verification step before results enter the company plan.
 - 578 automated tests, all passing.
 
+## v0.9: GPU jobs
+
+- **GPU-hours and utilisation:** GPUs counted from `AllocTRES` (`gres/gpu=N` or typed `gres/gpu:a100=N`); utilisation from `TRESUsageInAve` (`gres/gpuutil`) where the cluster records it. Reported per job, user, partition and overall; GPU columns added to every export command.
+- **Idle-GPU advice:** completed jobs under 50% busy on several GPUs get a `--gpus=` suggestion; single-GPU jobs under 30% are asked whether they really use the GPU.
+- **CLI and web app:** GPU lines in the report and a GPU-hours card, shown only when the export has GPU jobs.
+- **Workflow:** Qwen built the engine, summaries, CLI lines and docs; it failed the web card's HTML edit three times (run live and relayed to you), so Claude added it. The edit tool now matches text even when Qwen drops indentation.
+- Not verified: GPU utilisation on a real cluster (needs GPU accounting enabled).
+- 594 automated tests, all passing; backed up to GitHub automatically.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.

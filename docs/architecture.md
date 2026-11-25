@@ -58,6 +58,10 @@ Jobs in states RUNNING, PENDING, REQUEUED, SUSPENDED and RESIZING are skipped. R
 
 Tested against public `sacct` captures from real clusters. HPCFlow reads `|`, comma and tab separated exports, column names in any case (`maxrss` = `MaxRSS`), and only requires `JobID` and `State`. Missing columns are reported as `warnings` (e.g. no `TotalCPU` -> no CPU efficiency) instead of rejecting the file. Fallbacks: CPU count from `NCPUS` or `cpu=` in `AllocTRES`/`ReqTRES`; memory request from `mem=` in `AllocTRES`/`ReqTRES`. A job Slurm marks `FAILED` whose step ran `OUT_OF_MEMORY` is reported as `OUT_OF_MEMORY`. Unknown totals are `null`, never 0. Fixed-width output (exported without `-P`) is refused with the correct export command. Job arrays are summarised in `summary.arrays`; the web table shows at most the 200 most wasteful jobs (CSV has all).
 
+## GPU jobs (v0.9)
+
+GPUs come from `AllocTRES` (or `ReqTRES`): `gres/gpu=N`, or typed `gres/gpu:<type>=N` (if both appear, the untyped total counts). `gpu_hours = GPUs x Elapsed`. Utilisation is the highest `gres/gpuutil` in `TRESUsageInAve` across the job and its steps; it exists only where the cluster has GPU accounting enabled, otherwise a note says it is unavailable. Advice (completed jobs only): under 50% busy on several GPUs, suggest `--gpus=ceil(GPUs x util x 1.2)`; under 30% on one GPU, ask whether the job really uses the GPU. Summary: `gpu_job_count`, `total_gpu_hours`, `avg_gpu_utilization`; groups: `gpu_hours`.
+
 ## Components
 
 - `backend/analysis.py`: pure Python standard library, no pandas. Parsing, metrics and recommendations. Fully unit-tested.

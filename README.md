@@ -46,6 +46,10 @@ docker build -t hpcflow .
 docker run -p 8000:8000 hpcflow
 ```
 
+## GPU jobs
+
+If your export includes `AllocTRES` (and, on clusters with GPU accounting, `TRESUsageInAve`), HPCFlow reports GPU-hours, average GPU utilisation and advice for idle GPUs, overall, per user and per job.
+
 ## API
 
 - `GET /` serves the frontend

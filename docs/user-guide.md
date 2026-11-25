@@ -41,6 +41,10 @@ If your export includes the User and Partition columns, HPCFlow also shows two s
 
 The "Avg queue wait" card and the "Queue wait" column show how long jobs waited between submission and start (for example "45m" or "1d 02h"). Long waits often mean the job asked for more CPUs, memory or time than the scheduler could find quickly: requesting what the job really needs usually starts it sooner.
 
+## GPU jobs
+
+If you used GPUs, the "GPU-hours" card shows how many GPU-hours your jobs held and, when your cluster records it, how busy the GPUs were on average. A job that kept GPUs mostly idle gets advice such as "request --gpus=1 instead". GPUs are usually the most expensive resource on a cluster, so this is often the biggest saving.
+
 ## Recommendations
 
 HPCFlow suggests how to improve your next job:
