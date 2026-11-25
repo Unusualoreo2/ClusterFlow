@@ -8,7 +8,59 @@ from math import ceil
 SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
 
 
+def _finite(x):
+    """Return x if it is a finite number >= 0, else None."""
+    if x is None:
+        return None
+    try:
+        x = float(x)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if x != x or x in (float("inf"), float("-inf")) or x < 0:
+        return None
+    return x
+
+
+def _safe(fn, *args):
+    """Call a parser; any parsing error or non-finite/negative result becomes None."""
+    try:
+        return _finite(fn(*args))
+    except (ValueError, TypeError, OverflowError, IndexError, AttributeError):
+        return None
+
+
+def _finite(x):
+    """Return x if it is a finite number >= 0, else None."""
+    if x is None:
+        return None
+    try:
+        x = float(x)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if x != x or x in (float("inf"), float("-inf")) or x < 0:
+        return None
+    return x
+
+
+def _safe(fn, *args):
+    """Call a parser; any parsing error or non-finite/negative result becomes None."""
+    try:
+        return _finite(fn(*args))
+    except (ValueError, TypeError, OverflowError, IndexError, AttributeError):
+        return None
+
+
 def parse_duration(text):
+    """Slurm duration -> seconds, or None if missing or unparseable."""
+    return _safe(_parse_duration_unsafe, text)
+
+
+def _parse_duration_unsafe(text):
+    """Slurm duration -> seconds, or None if missing or unparseable."""
+    return _safe(_parse_duration_unsafe, text)
+
+
+def _parse_duration_unsafe(text):
     """
     Parse Slurm duration strings into seconds.
     
@@ -40,6 +92,16 @@ def parse_duration(text):
 
 
 def parse_mem_mb(text):
+    """Memory string -> MB, or None if missing or unparseable."""
+    return _safe(_parse_mem_mb_unsafe, text)
+
+
+def _parse_mem_mb_unsafe(text):
+    """Memory string -> MB, or None if missing or unparseable."""
+    return _safe(_parse_mem_mb_unsafe, text)
+
+
+def _parse_mem_mb_unsafe(text):
     """
     Parse memory strings with optional suffixes into MB.
     
@@ -79,6 +141,16 @@ def parse_mem_mb(text):
 
 
 def parse_req_mem(text, alloc_cpus, nodes=1):
+    """Requested memory -> MB (per-CPU 'c' / per-node 'n' suffix), or None if missing or unparseable."""
+    return _safe(_parse_req_mem_unsafe, text, alloc_cpus, nodes)
+
+
+def _parse_req_mem_unsafe(text, alloc_cpus, nodes=1):
+    """Requested memory -> MB (per-CPU 'c' / per-node 'n' suffix), or None if missing or unparseable."""
+    return _safe(_parse_req_mem_unsafe, text, alloc_cpus, nodes)
+
+
+def _parse_req_mem_unsafe(text, alloc_cpus, nodes=1):
     """
     Parse memory request with optional per-CPU or per-node suffix.
     
@@ -247,10 +319,8 @@ def analyze_job(job):
     total_cpu_s = parse_duration(total_cpu_str)
     
     # Parse CPU count
-    try:
-        alloc_cpus = int(alloc_cpus_str) if alloc_cpus_str else 0
-    except ValueError:
-        alloc_cpus = 0
+    alloc_cpus = _safe(float, alloc_cpus_str)
+    alloc_cpus = int(alloc_cpus) if alloc_cpus is not None and alloc_cpus == int(alloc_cpus) else 0
     
     # Parse memory values
     req_mem_mb = parse_req_mem(req_mem_str, alloc_cpus)
@@ -269,7 +339,7 @@ def analyze_job(job):
         if req_mem_mb is not None and req_mem_mb > 0:
             memory_efficiency = (max_rss_mb / req_mem_mb) * 100 if max_rss_mb is not None else None
     
-    if timelimit_s is not None and timelimit_s > 0:
+    if elapsed_s is not None and timelimit_s is not None and timelimit_s > 0:
         time_used = (elapsed_s / timelimit_s) * 100
     
     if elapsed_s is not None and total_cpu_s is not None:
