@@ -357,6 +357,70 @@ def _start_date(job):
     return ts.date().isoformat() if ts else None
 
 
+def percentile(values, p):
+    """Nearest-rank percentile (p in 0-100) of a list of numbers; None if empty."""
+    if not values:
+        return None
+    ordered = sorted(values)
+    k = max(1, int(ceil(p / 100.0 * len(ordered))))
+    return ordered[k - 1]
+
+
+def _hms(seconds):
+    seconds = int(seconds)
+    return "%02d:%02d:%02d" % (seconds // 3600, (seconds % 3600) // 60, seconds % 60)
+
+
+def summarize_profiles(results, min_runs=3):
+    """Advice per (user, job name) from >= min_runs COMPLETED runs, sized to near-worst runs:
+    p90 busy cores x 1.2, p95 peak memory x 1.2, p95 run time x 1.5 (rounded up to 15 min).
+    Compared with the median request. Sorted by wasted core-hours (desc), then user, name."""
+    groups = {}
+    for j in results:
+        if not j.get("name") or not j["state"].startswith("COMPLETED"):
+            continue
+        groups.setdefault((j.get("user", ""), j["name"]), []).append(j)
+    profiles = []
+    for (user, name), runs in groups.items():
+        n = len(runs)
+        if n < min_runs:
+            continue
+        cores = [r["cpu_efficiency"] / 100.0 * r["alloc_cpus"] for r in runs if r["cpu_efficiency"] is not None]
+        rss = [r["max_rss_mb"] for r in runs if r["max_rss_mb"] is not None]
+        req = [r["req_mem_mb"] for r in runs if r["req_mem_mb"] is not None]
+        el = [r["elapsed_s"] for r in runs if r["elapsed_s"]]
+        limits = [r["elapsed_s"] / (r["time_used"] / 100.0) for r in runs if r["elapsed_s"] and r["time_used"]]
+        cpus_req = percentile([r["alloc_cpus"] for r in runs], 50)
+        p_cores = percentile(cores, 90)
+        cpus_need = max(1, int(ceil(p_cores * 1.2))) if p_cores is not None else None
+        p_rss = percentile(rss, 95)
+        mem_need = int(ceil(p_rss * 1.2)) if p_rss is not None else None
+        mem_req = percentile(req, 50)
+        p_el = percentile(el, 95)
+        time_need = int(ceil(p_el * 1.5 / 900.0)) * 900 if p_el is not None else None
+        time_req = percentile(limits, 50)
+        recs = []
+        if cpus_need is not None and cpus_req and cpus_need < cpus_req:
+            recs.append("Across %d runs, at most %.1f cores were busy in 90%% of runs: request --cpus-per-task=%d "
+                        "instead of %d." % (n, p_cores, cpus_need, cpus_req))
+        if mem_need is not None and mem_req is not None and mem_req - mem_need >= 1024:
+            recs.append("Across %d runs, peak memory was at most %dM in 95%% of runs: request --mem=%dM instead of "
+                        "%dM." % (n, round(p_rss), mem_need, round(mem_req)))
+        if time_need is not None and time_req is not None and time_need < 0.5 * time_req:
+            recs.append("Across %d runs, 95%% finished within %s: request --time=%s instead of %s."
+                        % (n, _hms(p_el), _hms(time_need), _hms(time_req)))
+        profiles.append({
+            "user": user, "name": name, "runs": n,
+            "cpus_requested": cpus_req, "cpus_needed": cpus_need,
+            "mem_requested_mb": mem_req, "mem_needed_mb": mem_need,
+            "time_requested_s": time_req, "time_needed_s": time_need,
+            "wasted_core_hours": sum(r["wasted_core_hours"] or 0 for r in runs),
+            "recommendations": recs,
+        })
+    profiles.sort(key=lambda p: (-p["wasted_core_hours"], p["user"], p["name"]))
+    return profiles
+
+
 def summarize_trend(results):
     """Group jobs by day (when the export spans 14 days or less) or by week (named after its Monday), oldest first."""
     dated = [j for j in results if j.get("start_date")]
@@ -869,6 +933,7 @@ def analyze(text):
             "avg_gpu_utilization": avg_gpu_utilization,
             "idle_gpu_hours": idle_gpu_hours,
             "trend": summarize_trend(analyzed_jobs),
+            "profiles": summarize_profiles(analyzed_jobs),
             "arrays": summarize_arrays(analyzed_jobs),
             "by_user": by_user,
             "by_partition": by_partition
