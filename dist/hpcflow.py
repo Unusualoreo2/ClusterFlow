@@ -11,7 +11,7 @@ from datetime import datetime
 from math import ceil
 
 EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,"
-                  "Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS > jobs.txt")
+                  "Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt")
 
 KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Start", "End", "Elapsed",
                  "ElapsedRaw", "Timelimit", "AllocCPUS", "NCPUS", "TotalCPU", "CPUTime", "CPUTimeRAW", "ReqMem",
@@ -840,7 +840,7 @@ import copy
 
 def sacct_command(days, all_users=False):
     cmd = ["sacct", "-P", "--units=M", "-S", "now-%ddays" % days,
-            "--format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS"]
+            "--format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve"]
     if all_users:
         cmd.append("-a")
     return cmd
