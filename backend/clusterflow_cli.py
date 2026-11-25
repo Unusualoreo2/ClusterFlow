@@ -194,6 +194,14 @@ def report(result, top):
     trend = summary.get("trend") or {"period": None, "rows": []}
     if len(trend["rows"]) >= 2:
         lines += _group_table("Trend by %s" % trend["period"], trend["rows"])
+    bands = summary.get("wait_by_limit") or []
+    if len(bands) >= 2:
+        lines.append("Queue wait by time limit (median)")
+        for b in bands:
+            lines.append("  %-12s %8s %-4s  wait %s" % (b["label"], num(b["jobs"], 0), "job" if b["jobs"] == 1 else "jobs",
+                                                     fmt_wait(b["median_wait_s"])))
+        lines.append("  Shorter limits can start sooner (Slurm backfill). These are waits on this data, not a promise.")
+        lines.append("")
     profiles = [p for p in summary.get("profiles", []) if p["recommendations"]][:max(0, top)]
     if profiles:
         lines.append("Typical jobs (sized from repeated runs)")

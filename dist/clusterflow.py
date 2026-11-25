@@ -362,8 +362,15 @@ def percentile(values, p):
     if not values:
         return None
     ordered = sorted(values)
-    k = max(1, int(ceil(p / 100.0 * len(ordered))))
-    return ordered[k - 1]
+    # For median (50th percentile), use the standard definition
+    if p == 50 and len(ordered) % 2 == 0:
+        # Even number of elements: average of two middle values
+        mid1 = ordered[len(ordered) // 2 - 1]
+        mid2 = ordered[len(ordered) // 2]
+        return (mid1 + mid2) / 2.0
+    else:
+        k = max(1, int(ceil(p / 100.0 * len(ordered))))
+        return ordered[k - 1]
 
 
 def _hms(seconds):
@@ -431,6 +438,23 @@ def summarize_profiles(results, min_runs=3):
         })
     profiles.sort(key=lambda p: (-p["wasted_core_hours"], p["user"], p["name"]))
     return profiles
+
+
+WAIT_BANDS = [("up to 1 h", 3600), ("1-4 h", 14400), ("4-12 h", 43200), ("12-24 h", 86400), ("over 24 h", None)]
+
+
+def summarize_wait_by_limit(results):
+    """Median queue wait per time-limit band, bands in WAIT_BANDS order, empty bands left out."""
+    waits = {label: [] for label, _ in WAIT_BANDS}
+    for j in results:
+        if j.get("wait_s") is None or j.get("timelimit_s") is None:
+            continue
+        for label, top in WAIT_BANDS:
+            if top is None or j["timelimit_s"] <= top:
+                waits[label].append(j["wait_s"])
+                break
+    return [{"label": label, "jobs": len(waits[label]), "median_wait_s": float(percentile(waits[label], 50))}
+            for label, _ in WAIT_BANDS if waits[label]]
 
 
 def summarize_trend(results):
@@ -593,6 +617,7 @@ def analyze_job(job):
         "time_used": time_used,
         "wasted_core_hours": wasted_core_hours,
         "wait_s": wait_s,
+        "timelimit_s": timelimit_s,
         "array_id": job_id.split(".")[0].split("_")[0] if "_" in job_id.split(".")[0] else None,
         "max_rss_mb": max_rss_mb,
         "req_mem_mb": req_mem_mb,
@@ -961,6 +986,7 @@ def _summarise(rows, jobs):
             "avg_gpu_utilization": avg_gpu_utilization,
             "idle_gpu_hours": idle_gpu_hours,
             "trend": summarize_trend(analyzed_jobs),
+            "wait_by_limit": summarize_wait_by_limit(analyzed_jobs),
             "profiles": summarize_profiles(analyzed_jobs),
             "arrays": summarize_arrays(analyzed_jobs),
             "by_user": by_user,
@@ -1161,6 +1187,14 @@ def report(result, top):
     trend = summary.get("trend") or {"period": None, "rows": []}
     if len(trend["rows"]) >= 2:
         lines += _group_table("Trend by %s" % trend["period"], trend["rows"])
+    bands = summary.get("wait_by_limit") or []
+    if len(bands) >= 2:
+        lines.append("Queue wait by time limit (median)")
+        for b in bands:
+            lines.append("  %-12s %8s %-4s  wait %s" % (b["label"], num(b["jobs"], 0), "job" if b["jobs"] == 1 else "jobs",
+                                                     fmt_wait(b["median_wait_s"])))
+        lines.append("  Shorter limits can start sooner (Slurm backfill). These are waits on this data, not a promise.")
+        lines.append("")
     profiles = [p for p in summary.get("profiles", []) if p["recommendations"]][:max(0, top)]
     if profiles:
         lines.append("Typical jobs (sized from repeated runs)")
