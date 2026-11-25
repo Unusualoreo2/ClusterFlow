@@ -47,6 +47,16 @@ HPCFlow v0.2 is built, tested and committed. It is a Slurm job efficiency analys
 - **Workflow fixes:** the automation now judges success by the tests plus a task-specific check (not by what Qwen says), rolls back a failed attempt before retrying, and stops Qwen when it loops on a passing test suite. Qwen reads files in 200-line chunks and can search, so it no longer runs out of memory on large files.
 - 521 automated tests, all passing.
 
+## v0.6 (same day): Kelvin2 pilot kit
+
+- **Pilot test jobs** (`pilot/`): six Slurm jobs with known correct verdicts (well sized, too many CPUs, too much memory, too much time, out of memory, timeout), about 2.5 core-hours in total, plus `submit_all.sh`.
+- **Automatic pilot check** (`pilot/check_pilot.py`): reads HPCFlow's JSON output and prints PASS/FAIL per test job.
+- **`--anonymise`**: shareable reports, with users, job names and job IDs replaced by `user1`/`job1`/`J1`.
+- **Better advice, found by simulating the pilot:** no more "request --mem=14M" on small jobs (memory cuts only when they save at least 1 GB), and no "request less" advice derived from failed, out-of-memory or timed-out runs.
+- **Old-Python check:** a test scans the cluster file for anything newer than Python 3.6 (verified to catch planted violations); Python 3.6 itself is not installed here, so this is a scan, not a run.
+- **Guide:** `docs/pilot-guide.md`, step by step, without guessing Kelvin2-specific settings.
+- Kelvin2 access requested (25 Nov 2026). 540 automated tests, all passing.
+
 ## Not yet done
 
 - Test with real `sacct` exports from a university cluster. So far only realistic sample data has been used.
