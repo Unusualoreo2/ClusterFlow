@@ -95,6 +95,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 ## 7. Open items and next candidates
 
 - CIUK demo: done (`--demo`, `--html`, web demo button, `docs/try-it-yourself.md`).
+- Next candidate: add raw figures to `--csv` (alloc CPUs, memory requested/used, elapsed, time limit, queue wait) as extra columns at the end, for admins working in spreadsheets.
 - Typical-job advice tested only on constructed data (IN2P3 has no job names).
 - Docker: built and tested (v0.20).
 - Python 3.6/3.8: run for real in the test suite (v0.16).
