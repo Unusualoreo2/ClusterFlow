@@ -94,6 +94,15 @@ def parse_timestamp(text):
 
 def _parse_timestamp_text(text):
     """sacct timestamp 'YYYY-MM-DDTHH:MM:SS' (or with a space) -> datetime, or None ('Unknown', 'None', '', invalid)."""
+    if (len(text) == 19 and text[4] == "-" and text[7] == "-" and text[10] in "T " and text[13] == ":"
+            and text[16] == ":"):
+        digits = text[0:4] + text[5:7] + text[8:10] + text[11:13] + text[14:16] + text[17:19]
+        if all(c in "0123456789" for c in digits):  # ASCII digits only (isascii() is Python 3.7+)
+            try:
+                return datetime(int(text[0:4]), int(text[5:7]), int(text[8:10]),
+                                int(text[11:13]), int(text[14:16]), int(text[17:19]))
+            except ValueError:
+                return None
     try:
         return datetime.strptime(text, "%Y-%m-%dT%H:%M:%S")
     except (ValueError, TypeError):
@@ -468,13 +477,20 @@ def summarize_trend(results):
     dated = [j for j in results if j.get("start_date")]
     if not dated:
         return {"period": None, "rows": []}
-    days = sorted(datetime.strptime(j["start_date"], "%Y-%m-%d").date() for j in dated)
+    parsed = {}
+
+    def as_date(day_text):
+        if day_text not in parsed:
+            parsed[day_text] = datetime.strptime(day_text, "%Y-%m-%d").date()
+        return parsed[day_text]
+
+    days = sorted(as_date(t) for t in {j["start_date"] for j in dated})
     period = "day" if (days[-1] - days[0]).days <= 14 else "week"
 
     def key(day_text):
         if period == "day":
             return day_text
-        d = datetime.strptime(day_text, "%Y-%m-%d").date()
+        d = as_date(day_text)
         return (d - timedelta(days=d.weekday())).isoformat()
 
     tagged = [dict(j, period=key(j["start_date"])) for j in dated]
