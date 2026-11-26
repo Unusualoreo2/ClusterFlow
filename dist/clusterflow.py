@@ -599,6 +599,11 @@ def analyze_job(job):
         elif gpu_util < 30:
             recommendations.append("GPU utilisation is %.1f%% on %d GPU%s: check that the job really uses the GPU."
                                    % (gpu_util, alloc_gpus, "" if alloc_gpus == 1 else "s"))
+    # Single-core job that mostly waited (no CPU count to lower, but worth a look)
+    if (completed and alloc_cpus == 1 and cpu_efficiency is not None and cpu_efficiency < 25
+            and elapsed_s is not None and elapsed_s >= 600):
+        recommendations.append("CPU was busy only %.1f%% of the run: the job mostly waited (file input/output, network "
+                               "or sleep). Worth checking it is not stuck waiting." % cpu_efficiency)
     # CPU efficiency recommendation
     if completed and cpu_efficiency is not None and cpu_efficiency < 50 and alloc_cpus > 1:
         new_cpus = max(1, ceil(alloc_cpus * cpu_efficiency / 100 * 1.2))
@@ -1097,6 +1102,7 @@ FIX_CATEGORIES = [
     ("ran out of memory", lambda r: r.startswith("Job ran out of memory")),
     ("hit the time limit", lambda r: r.startswith("Job hit its time limit")),
     ("close to the memory limit", lambda r: r.startswith("Peak memory is")),
+    ("mostly waited instead of computing", lambda r: r.startswith("CPU was busy only")),
 ]
 
 

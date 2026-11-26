@@ -76,6 +76,7 @@ FIX_CATEGORIES = [
     ("ran out of memory", lambda r: r.startswith("Job ran out of memory")),
     ("hit the time limit", lambda r: r.startswith("Job hit its time limit")),
     ("close to the memory limit", lambda r: r.startswith("Peak memory is")),
+    ("mostly waited instead of computing", lambda r: r.startswith("CPU was busy only")),
 ]
 
 
