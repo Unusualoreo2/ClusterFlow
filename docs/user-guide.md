@@ -41,6 +41,10 @@ If your export includes the User and Partition columns, ClusterFlow also shows t
 
 The "Avg queue wait" card and the "Queue wait" column show how long jobs waited between submission and start (for example "45m" or "1d 02h"). Long waits often mean the job asked for more CPUs, memory or time than the scheduler could find quickly: requesting what the job really needs usually starts it sooner.
 
+### Does a shorter time limit start sooner?
+
+The report groups jobs by their time limit (up to 1 h, 1-4 h, 4-12 h, 12-24 h, over 24 h) and shows the median wait and the time by which 90% had started. On busy clusters, short limits often start sooner because Slurm can fit them into gaps (backfill). ClusterFlow only says so when your data shows it; it is not a promise.
+
 ## GPU jobs
 
 If you used GPUs, the "GPU-hours" card shows how many GPU-hours your jobs held and, when your cluster records it, how busy the GPUs were on average. A job that kept GPUs mostly idle gets advice such as "request --gpus=1 instead". GPUs are usually the most expensive resource on a cluster, so this is often the biggest saving.
@@ -65,7 +69,9 @@ ClusterFlow suggests how to improve your next job:
 - If memory efficiency is low (under 50%), request less memory next time: ClusterFlow gives the exact --mem value.
 - If memory efficiency is high (>90%), warn that the job is near its limit.
 - If time used is low, suggest a shorter time limit.
-- If a job ran out of memory or timed out, suggest more resources.
+- If a job ran out of memory or timed out, suggest more resources. For memory, the suggestion is 1.5 times the larger of what was requested and the measured peak.
+- If a single-core job ran 10 minutes or more with the CPU busy under 25% of the time, flag that it mostly waited (files, network or sleep): worth checking it is not stuck.
+- Advice never suggests less of something that already ran out: if any task of an array, or any run of a job you repeat, ran out of memory (or time), ClusterFlow will not suggest lowering memory (or time) for it.
 
 ## Ready-to-paste settings for jobs you run often
 
@@ -94,6 +100,8 @@ Run with `--all-users --split-by-user reports/` to write one HTML report per use
 ## Show what improved: `--compare`
 
 Keep an export from before you changed your job settings (`sacct ... > before.txt`). Later run `python3 dist/clusterflow.py --compare before.txt` (or with a newer export file). The report ends with a "Change since before" section: CPU and memory efficiency, wasted core-hours per job, and out-of-memory and timed-out jobs, then and now.
+
+Each per-user report also shows the cluster average (CPU and memory efficiency across everyone in the file), so researchers can see where they stand.
 
 ## Try it first: `--demo`
 
