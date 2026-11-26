@@ -4,3 +4,5 @@ logs/
 *.pyc
 .pytest_cache/
 *.log
+# local editor/assistant config
+.claude/

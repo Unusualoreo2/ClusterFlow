@@ -24,10 +24,10 @@ It has **not yet run on a live cluster**. Kelvin2 (QUB) access has been requeste
 ## 2. Setting up the AI workflow
 
 1. **Local AI given file access.** The local Qwen model (30B, on this PC's GPU) first got file tools through a small script, then through Open WebUI. The "stuck writing a file" problem was traced to a chat using a model with no file tool attached.
-2. **Architect / builder workflow.** You set the rule: Claude is the architect and makes the decisions, Qwen produces the code. In practice:
-   - Claude writes the specification and the acceptance tests first.
+2. **Architect / builder workflow.** You set the rule: the architect makes the decisions, Qwen produces the code. In practice:
+   - The architect writes the specification and the acceptance tests first.
    - Qwen3-Coder implements through a worker script with file tools limited to the project folder.
-   - Nothing is accepted until the tests pass and Claude has reviewed the change; when Qwen fails twice, Claude fixes it and says so in the commit message.
+   - Nothing is accepted until the tests pass and the architect has reviewed the change; when Qwen fails twice, the architect fixes it and says so in the commit message.
 3. **Workflow hardened as problems appeared** (tools now saved in `tools/qwen/`):
    - Qwen froze or ran out of output space: per-request timeouts, output caps, cut-off tool calls discarded.
    - Qwen re-read whole files and ran out of memory: reads in 200-line chunks plus a search tool.

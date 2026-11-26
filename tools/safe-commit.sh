@@ -11,8 +11,6 @@ if ! echo "$result" | grep -q "passed" || echo "$result" | grep -qE "failed|erro
   exit 1
 fi
 git add -A
-git -c user.name="ClusterFlow" -c user.email="clusterflow@localhost" commit -q -m "$1
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>" 2>&1 | grep -v "LF will"
+git -c user.name="ClusterFlow" -c user.email="clusterflow@localhost" commit -q -m "$1" 2>&1 | grep -v "LF will"
 sleep 3
 tail -1 .git/autopush.log

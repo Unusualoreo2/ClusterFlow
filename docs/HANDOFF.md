@@ -35,7 +35,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 ## 3. How the work is done (the user's rules)
 
-- **Claude = architect / boss, local Qwen = builder.** Claude writes the spec and tests; Qwen3-Coder implements; Claude verifies and only implements itself after Qwen fails twice. **Use Qwen whenever possible to save Claude usage.**
+- **Architect / boss = the AI coding assistant, local Qwen = builder.** The architect writes the spec and tests; Qwen3-Coder implements; the architect verifies and only implements itself after Qwen fails twice. **Use Qwen whenever possible to save the architect usage.**
 - Qwen runs locally: llama.cpp router at `http://127.0.0.1:8080/v1`, model `qwen3-coder-30b` (RX 9060 XT GPU).
 - **Hand a task to Qwen:** write a task file, then `bash tools/qwen/qwen-task.sh <task.md> [max_tokens] [check-command]`. It runs Qwen with file tools limited to the project, then checks all tests plus the task's own check; on failure it rolls back and retries once. See `tools/qwen/README.md`.
 - **Commit only with** `bash tools/safe-commit.sh "message"`: it rebuilds the bundle and refuses to commit unless every test passes.

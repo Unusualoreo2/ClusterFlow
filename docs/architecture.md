@@ -1,6 +1,6 @@
 # ClusterFlow architecture (v0.2)
 
-Owner of decisions: Claude (architect). Implementation: Qwen. Every change is verified by running tests before it is accepted.
+Owner of decisions: the architect. Implementation: Qwen. Every change is verified by running tests before it is accepted.
 
 ## Review of v0.1 (why it is being rebuilt)
 

@@ -6,7 +6,7 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 
 ## Team and workflow
 
-- **Claude (architect):** product decisions, specifications, acceptance tests, review and verification.
+- **Architect:** product decisions, specifications, acceptance tests, review and verification.
 - **Qwen3-Coder 30B (builder, running locally):** wrote the code and documentation to spec.
 - Every change was accepted only after the tests passed and a manual or browser check, then committed to a local git repository.
 
@@ -36,7 +36,7 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 ## v0.4 (same day)
 
 - **Command-line version** (`backend/clusterflow_cli.py`) that runs on the cluster itself: it calls `sacct`, prints the report (summary, by-user and by-partition tables, top jobs by waste with recommendations) and can write CSV or JSON. Standard library only, Python 3.7+ syntax. No data leaves the cluster.
-- Qwen's draft passed 76 of 79 tests but read data fields that don't exist. After two failed rounds, Claude rewrote the report functions.
+- Qwen's draft passed 76 of 79 tests but read data fields that don't exist. After two failed rounds, the architect rewrote the report functions.
 - 79 automated tests, all passing.
 
 ## v0.5 (same day)
@@ -77,14 +77,14 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 - **GPU-hours and utilisation:** GPUs counted from `AllocTRES` (`gres/gpu=N` or typed `gres/gpu:a100=N`); utilisation from `TRESUsageInAve` (`gres/gpuutil`) where the cluster records it. Reported per job, user, partition and overall; GPU columns added to every export command.
 - **Idle-GPU advice:** completed jobs under 50% busy on several GPUs get a `--gpus=` suggestion; single-GPU jobs under 30% are asked whether they really use the GPU.
 - **CLI and web app:** GPU lines in the report and a GPU-hours card, shown only when the export has GPU jobs.
-- **Workflow:** Qwen built the engine, summaries, CLI lines and docs; it failed the web card's HTML edit three times (run live and relayed to you), so Claude added it. The edit tool now matches text even when Qwen drops indentation.
+- **Workflow:** Qwen built the engine, summaries, CLI lines and docs; it failed the web card's HTML edit three times (run live and relayed to you), so the architect added it. The edit tool now matches text even when Qwen drops indentation.
 - Not verified: GPU utilisation on a real cluster (needs GPU accounting enabled).
 - 594 automated tests, all passing; backed up to GitHub automatically.
 
 ## v0.10: usage trend over time
 
 - **Trend table** in the engine, CLI and web app: jobs grouped by start day (exports of 14 days or less) or by week, with efficiency, wasted core-hours, GPU-hours and queue wait per period, oldest first.
-- **Workflow:** Qwen built the engine part first try and the display in one run; Claude corrected a one-space indentation slip and made the edit tool align replacements properly.
+- **Workflow:** Qwen built the engine part first try and the display in one run; the architect corrected a one-space indentation slip and made the edit tool align replacements properly.
 - 602 automated tests, all passing; backed up to GitHub automatically.
 
 ## v0.11-v0.12: cost, real data at scale, readable report, typical-job advice (evening 25 Nov)
@@ -93,7 +93,7 @@ ClusterFlow v0.2 is built, tested and committed. It is a Slurm job efficiency an
 - **Real data at scale:** reads the published IN2P3 2024 dataset format (Unix timestamps, durations in seconds, lowercase states). The full December 2024 month, **2.37 million real jobs, analyses in 72 seconds**: 69% CPU efficiency, 33% memory efficiency, 5.07 million wasted core-hours, 15,071 out-of-memory jobs. Profiling confirmed linear scaling and found one speed-up (applied).
 - **Readable CLI report for the CIUK demo:** "What to fix first" headline (e.g. *84,390 jobs: request a shorter time limit* on a 100k-job sample), thousands separators, `--top` limits every table.
 - **Typical-job advice:** for jobs a user runs 3+ times, advice sized from the near-worst runs (p90 CPU, p95 memory and time), so one unusually small run cannot cause a crash-prone recommendation. In the CLI, web app and docs.
-- **Process:** a gated commit helper (`tools/safe-commit.sh`) now refuses to commit unless all tests pass, after one broken test file reached GitHub for about 30 seconds. Qwen built almost everything; Claude implemented the readable report after Qwen failed it twice.
+- **Process:** a gated commit helper (`tools/safe-commit.sh`) now refuses to commit unless all tests pass, after one broken test file reached GitHub for about 30 seconds. Qwen built almost everything; the architect implemented the readable report after Qwen failed it twice.
 - Open: 6 jobs in the IN2P3 month show impossible >150% efficiencies (likely dataset quirks; not investigated). IN2P3 has no job names, so typical-job advice was tested on constructed data only.
 - 627 automated tests, all passing; backed up to GitHub automatically.
 
