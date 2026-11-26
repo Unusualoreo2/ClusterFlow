@@ -665,6 +665,16 @@
             groupsSection.appendChild(ul);
         }
 
+        function renderFixFirst(items) {
+            if (!items.length) return;
+            const heading = document.createElement('h3');
+            heading.textContent = 'What to fix first';
+            groupsSection.appendChild(heading);
+            const ul = document.createElement('ul');
+            items.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+            groupsSection.appendChild(ul);
+        }
+
         function renderWaitByLimit(bands) {
             if (bands.length < 2) return;
             const heading = document.createElement('h3');
@@ -770,6 +780,7 @@
 
             // Per-user / per-partition tables
             groupsSection.textContent = '';
+            renderFixFirst(data.fix_first || []);
             renderGroups('By user', 'User', data.summary.by_user || []);
             renderGroups('By partition', 'Partition', data.summary.by_partition || []);
             const trend = data.summary.trend || {rows: []};

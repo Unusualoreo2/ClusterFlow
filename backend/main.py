@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from pathlib import Path
 from analysis import analyze
-from clusterflow_cli import DEMO_SACCT, html_report
+from clusterflow_cli import DEMO_SACCT, fix_first, html_report
 from pydantic import BaseModel
 
 # Constants
@@ -49,6 +49,7 @@ async def _run(raw: bytes) -> dict:
     except ValueError as error:
         raise HTTPException(400, str(error))
     
+    result["fix_first"] = [line.strip() for line in fix_first(result["jobs"])]
     return result
 
 @app.post("/api/analyze")
