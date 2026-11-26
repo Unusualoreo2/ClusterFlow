@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.27, **786 tests, all passing** |
+| Version | v0.28, **790 tests, all passing** |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -75,6 +75,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.25 | Faster: fixed-layout timestamp fast path and per-day parsing in the trend (400k real jobs 11.0 s -> 9.4 s, same results on Python 3.6/3.8/3.12) |
 | v0.26 | Flags single-core jobs that mostly waited (>= 10 min, CPU busy < 25%): 3.3% of real 1-core IN2P3 jobs |
 | v0.27 | "What to fix first" shows core-hours wasted, GB-hours of memory unused, GPU-hours idle (real sample: 2,613 multi-core jobs waste 129k core-hours); also on the web page |
+| v0.28 | `--split-by-user` also writes index.html (all users by waste, linked); VERSION fixed (was stuck at 0.19) and now tested against this file's Version line: bump both on every release |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
