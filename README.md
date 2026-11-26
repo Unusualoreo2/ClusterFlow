@@ -32,7 +32,7 @@ Copy the single file `dist/clusterflow.py` to the cluster (Python 3.6+, standard
 python3 clusterflow.py                 # runs sacct for your jobs of the last 7 days
 python3 clusterflow.py --demo           # see what a report looks like (made-up data)
 python3 clusterflow.py --days 30 --top 10
-python3 clusterflow.py jobs.txt --csv report.csv
+python3 clusterflow.py jobs.txt --csv report.csv     # one row per job, raw figures included
 python3 clusterflow.py jobs.txt --html report.html   # one file to open, print or email
 python3 clusterflow.py --all-users --split-by-user reports/   # admins: one HTML report per user
 python3 clusterflow.py --days 30 --compare last_quarter.txt   # what improved since an earlier export

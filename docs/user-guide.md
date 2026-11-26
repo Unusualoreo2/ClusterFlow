@@ -93,6 +93,10 @@ python3 dist/clusterflow.py jobs.txt --html report.html
 python3 dist/clusterflow.py jobs.txt --anonymise --html report.html   # safe to share outside your group
 ```
 
+## Work in a spreadsheet: `--csv`
+
+Add `--csv report.csv` to write one row per job. After the verdicts (efficiencies, wasted core-hours, advice) come the raw figures they were worked out from: `alloc_cpus`, `mem_requested_mb`, `mem_used_mb` (peak, MaxRSS), `elapsed_s`, `time_limit_s`, `queue_wait_s`, `alloc_gpus` and `gpu_hours`. A figure missing from the export is left empty. Text that starts with `=`, `+`, `-` or `@` gets a leading `'`, so a job name can never run as a spreadsheet formula.
+
 ## For HPC teams: one report per user
 
 Run with `--all-users --split-by-user reports/` to write one HTML report per user into `reports/` (for example `reports/amurphy.html`). Each file covers only that user's jobs, so you can send every researcher their own report.

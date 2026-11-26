@@ -1,7 +1,7 @@
 # ClusterFlow: guide for an AI assistant working on this code
 
 Read this before changing anything. It is short on purpose: open other files only when your task needs them.
-Version at time of writing: v0.28 (see `VERSION` in `backend/clusterflow_cli.py`).
+Version at time of writing: v0.29 (see `VERSION` in `backend/clusterflow_cli.py`).
 
 ## 1. What ClusterFlow does
 

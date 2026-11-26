@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.28, **790 tests, all passing** |
+| Version | v0.29, **797 tests, all passing** (4 skip by design) |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -76,6 +76,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.26 | Flags single-core jobs that mostly waited (>= 10 min, CPU busy < 25%): 3.3% of real 1-core IN2P3 jobs |
 | v0.27 | "What to fix first" shows core-hours wasted, GB-hours of memory unused, GPU-hours idle (real sample: 2,613 multi-core jobs waste 129k core-hours); also on the web page |
 | v0.28 | `--split-by-user` also writes index.html (all users by waste, linked); VERSION fixed (was stuck at 0.19) and now tested against this file's Version line: bump both on every release |
+| v0.29 | `--csv` adds raw figures at the end (alloc CPUs, memory requested/used MB, elapsed, time limit, queue wait in seconds, GPUs, GPU-hours); text cells starting `= + - @` get a leading `'` (CSV formula injection, as the web CSV already did). Built on branch `feat/csv-raw-figures` |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -93,7 +94,9 @@ Kept outside this public repository.
 ## 7. Open items and next candidates
 
 - CIUK demo: done (`--demo`, `--html`, web demo button, `docs/try-it-yourself.md`).
-- Next candidate: add raw figures to `--csv` (alloc CPUs, memory requested/used, elapsed, time limit, queue wait) as extra columns at the end, for admins working in spreadsheets.
+- Raw figures in `--csv`: done (v0.29). The web page's "Download CSV" does not have them yet (next small candidate, `frontend/index.html` ~line 947; the API already returns the fields).
+- Competitor to keep in mind: Expanse (expanse.sh), see the private business folder for notes.
+- To check on a real cluster: sacct's MaxRSS is the peak of the largest single task, so multi-task (MPI) steps may show memory efficiency too low (per-node request vs one rank's peak). Test with an MPI job on Kelvin2 before trusting memory advice for them.
 - Typical-job advice tested only on constructed data (IN2P3 has no job names).
 - Docker: built and tested (v0.20).
 - Python 3.6/3.8: run for real in the test suite (v0.16).
@@ -107,7 +110,7 @@ Kept outside this public repository.
 | `backend/clusterflow_cli.py` | Command-line report |
 | `backend/main.py`, `frontend/index.html` | Web app |
 | `dist/clusterflow.py` | Single-file cluster build (`scripts/build_bundle.py`) |
-| `tests/` | 631 tests (the specs) |
+| `tests/` | 797 tests (the specs) |
 | `docs/progress-report.md` | Detailed history |
 | `docs/architecture.md` | All rules and formulas |
 | `docs/user-guide.md`, `README.md` | Usage |

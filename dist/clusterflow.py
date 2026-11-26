@@ -1092,7 +1092,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.28"
+VERSION = "0.29"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -1409,17 +1409,32 @@ def comparison_lines(comparison):
 
 
 def write_csv(result, path):
-    """Write every analysed job to a CSV file."""
+    """Write every analysed job to a CSV file, with the raw figures behind each verdict at the end."""
     def num(v):
         return "" if v is None else round(v, 1)
+
+    def whole(v):
+        return "" if v is None else int(round(v))
+
+    def text(v):
+        # Stop spreadsheets running cell text as a formula (same rule as the web page's CSV)
+        v = "" if v is None else str(v)
+        return "'" + v if v[:1] in ("=", "+", "-", "@") else v
+
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["job_id", "name", "state", "user", "partition", "cpu_efficiency",
-                    "memory_efficiency", "time_used", "wasted_core_hours", "recommendations"])
+                    "memory_efficiency", "time_used", "wasted_core_hours", "recommendations",
+                    "alloc_cpus", "mem_requested_mb", "mem_used_mb", "elapsed_s", "time_limit_s",
+                    "queue_wait_s", "alloc_gpus", "gpu_hours"])
         for j in result["jobs"]:
-            w.writerow([j["job_id"], j["name"], j["state"], j.get("user", ""), j.get("partition", ""),
+            w.writerow([text(j["job_id"]), text(j["name"]), text(j["state"]), text(j.get("user", "")),
+                        text(j.get("partition", "")),
                         num(j["cpu_efficiency"]), num(j["memory_efficiency"]), num(j["time_used"]),
-                        num(j["wasted_core_hours"]), " | ".join(j["recommendations"])])
+                        num(j["wasted_core_hours"]), text(" | ".join(j["recommendations"])),
+                        whole(j.get("alloc_cpus")), whole(j.get("req_mem_mb")), whole(j.get("max_rss_mb")),
+                        whole(j.get("elapsed_s")), whole(j.get("timelimit_s")), whole(j.get("wait_s")),
+                        whole(j.get("alloc_gpus")), num(j.get("gpu_hours"))])
 
 
 def estimate_cost(summary, cpu_rate, gpu_rate, currency="£"):
