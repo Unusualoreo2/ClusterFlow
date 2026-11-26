@@ -1144,13 +1144,29 @@ def _demo_sacct():
 DEMO_SACCT = _demo_sacct()
 
 
+def _impact(label, jobs):
+    """' (N unit)' for categories with a natural unit, else ''."""
+    if label == "request fewer CPUs":
+        return " (%s core-hours wasted)" % num(sum(j.get("wasted_core_hours") or 0 for j in jobs))
+    if label == "request less memory":
+        gbh = sum((j["req_mem_mb"] - j["max_rss_mb"]) / 1024.0 * (j.get("elapsed_s") or 0) / 3600.0
+                  for j in jobs if j.get("req_mem_mb") and j.get("max_rss_mb") is not None)
+        return " (%s GB-hours of memory unused)" % num(gbh)
+    if label == "request fewer GPUs or check GPU use":
+        idle = sum((j.get("gpu_hours") or 0) * (1 - j["gpu_utilization"] / 100.0)
+                   for j in jobs if j.get("gpu_utilization") is not None)
+        return " (%s GPU-hours idle)" % num(idle)
+    return ""
+
+
 def fix_first(jobs):
     """Lines like '2 jobs: request fewer CPUs', most common first (ties keep FIX_CATEGORIES order)."""
     counts = []
     for label, match in FIX_CATEGORIES:
-        n = sum(1 for j in jobs if any(match(r) for r in j["recommendations"]))
+        hit = [j for j in jobs if any(match(r) for r in j["recommendations"])]
+        n = len(hit)
         if n:
-            counts.append((n, label))
+            counts.append((n, label + _impact(label, hit)))
     counts.sort(key=lambda c: -c[0])
     return ["  %s %s: %s" % (num(n, 0), "job" if n == 1 else "jobs", label) for n, label in counts]
 

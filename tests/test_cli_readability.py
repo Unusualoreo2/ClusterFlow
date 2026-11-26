@@ -44,9 +44,9 @@ def test_fix_first_section(tmp_path):
     lines = out.splitlines()
     i = lines.index("What to fix first")
     section = lines[i + 1:i + 6]
-    assert section[0].strip() == "2 jobs: request fewer CPUs"
+    assert section[0].strip() == "2 jobs: request fewer CPUs (30.0 core-hours wasted)"  # v0.27: 2 x (16 - 1) h
     assert section[1].strip() == "2 jobs: request a shorter time limit"
-    assert "1 job: request less memory" in [s.strip() for s in section]
+    assert "1 job: request less memory (31.0 GB-hours of memory unused)" in [s.strip() for s in section]  # (32G - 1G) x 1 h
     assert "1 job: ran out of memory" in [s.strip() for s in section]
     assert out.index("What to fix first") < out.index("Top ")
 
