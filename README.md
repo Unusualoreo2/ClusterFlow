@@ -50,6 +50,21 @@ docker build -t clusterflow .
 docker run -p 8000:8000 clusterflow
 ```
 
+## Results on real data
+
+Analysis of the IN2P3 Computing Center 2024 job dataset (Zenodo record 18668107, CC-BY 4.0) was performed on a desktop PC. The dataset is not stored in this repository.
+
+| Metric | Value |
+|------|-------|
+| Average CPU efficiency | 69% |
+| Average memory efficiency | 33% |
+| Wasted core-hours | 5,072,809 |
+| Out-of-memory jobs | 15,071 |
+
+December 2024 data, comprising 2,374,219 jobs, was processed in about 72 seconds. The --split-by-user option generated 383 per-user HTML reports in under 3 minutes. A pilot of ClusterFlow on QUB's Kelvin2 is planned, using the pilot kit in the pilot/ directory.
+
+ClusterFlow has not yet been run on a live university cluster.
+
 ## GPU jobs
 
 If your export includes `AllocTRES` (and, on clusters with GPU accounting, `TRESUsageInAve`), ClusterFlow reports GPU-hours, average GPU utilisation and advice for idle GPUs, overall, per user and per job.

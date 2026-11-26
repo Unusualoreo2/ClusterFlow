@@ -81,9 +81,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 ## 5. Business side
 
-- **Market research** (Gemini) checked against sources in `docs/market-research-verified.md`. Verified: IN2P3 median completed job uses ~10% of its requested time; conservative walltime recommendation cuts the walltime gap 20-26% with <1% job kills. Corrected: Invest NI Innovation Vouchers are £5,000 (registered business needed). Market sizes are estimates only.
-- **`company_plan.md`** rewritten on verified facts. The £1,500-£4,500 per cluster per year price is a **hypothesis to test** with real buyers (QUB/NIHPC first).
-- Research kit for further Gemini work: `docs/market-research-kit.md`.
+Kept outside this public repository.
 
 ## 6. Waiting on the user
 
