@@ -57,7 +57,7 @@ def test_cli_writes_one_file_per_user(tmp_path):
     out = tmp_path / "reports"                     # does not exist yet
     p = run("--demo", "--split-by-user", str(out), "--cpu-hour-cost", "0.02")
     assert p.returncode == 0, p.stderr
-    assert sorted(os.listdir(str(out))) == [u + ".html" for u in DEMO_USERS]
+    assert sorted(os.listdir(str(out))) == sorted([u + ".html" for u in DEMO_USERS] + ["index.html"])  # v0.28 overview
     page = (out / "amurphy.html").read_text(encoding="utf-8")
     assert "Report for amurphy" in page
     assert "8 jobs analysed" in page
@@ -81,7 +81,7 @@ def test_safe_file_names_and_empty_user(tmp_path):
     out = tmp_path / "r"
     p = run(str(f), "--split-by-user", str(out))
     assert p.returncode == 0, p.stderr
-    assert os.listdir(str(out)) == [".._evil_user.html"]
+    assert sorted(os.listdir(str(out))) == [".._evil_user.html", "index.html"]
     assert not (tmp_path / "evil user.html").exists()
 
 
@@ -94,7 +94,7 @@ def test_not_with_anonymise(tmp_path):
 def test_bundle_supports_split(tmp_path):
     p = run("--demo", "--split-by-user", str(tmp_path / "r"), script=BUNDLE)
     assert p.returncode == 0, p.stderr
-    assert len(os.listdir(str(tmp_path / "r"))) == 5
+    assert len(os.listdir(str(tmp_path / "r"))) == 6  # 5 users + index.html
 
 
 def test_documented():
