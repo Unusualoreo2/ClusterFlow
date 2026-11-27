@@ -12,6 +12,8 @@ import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from analysis import analyze
 from analysis import analyze_by_user
+from analysis import load_settings
+from analysis import apply_settings
 
 
 def sacct_command(days, all_users=False):
@@ -66,7 +68,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.36"
+VERSION = "0.37"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -202,6 +204,9 @@ def report(result, top):
         if cost["idle_gpu_cost"] is not None:
             lines.append("Cost of idle GPU time:    %s (at %s per GPU-hour)"
                          % (_money(cur, cost["idle_gpu_cost"]), _rate(cur, cost["gpu_rate"])))
+    if result.get("settings"):
+        lines.append("Centre settings:       " + ", ".join("%s=%s" % (k, result["settings"][k])
+                                                       for k in sorted(result["settings"])))
     oc = summary.get("outcomes")
     if oc and oc["completed"] < summary["job_count"]:
         parts = [(oc[k], label) for k, label in (("completed", "completed"), ("failed", "failed"),
@@ -584,6 +589,8 @@ def main(argv=None):
     parser.add_argument("--gpu-hour-cost", type=float, default=None, metavar="RATE",
                          help="your centre's price per GPU-hour, to show what idle GPU time costs")
     parser.add_argument("--currency", default="£", metavar="SYMBOL", help="currency symbol for costs (default: £)")
+    parser.add_argument("--config", metavar="FILE",
+                        help="centre settings file (key = value lines): min_runs, memory_margin, memory_confidence_share")
     parser.add_argument("--demo", action="store_true", help="analyse a built-in sample (made-up data) to see what the report looks like")
 
     args = parser.parse_args(argv)
@@ -592,11 +599,23 @@ def main(argv=None):
         fail("--split-by-user writes each user's own report: it cannot be combined with --anonymise")
     if args.demo and (args.file is not None or args.days is not None):
         fail("--demo uses built-in sample data: do not also give a file or --days")
+    overrides = {}
+    if args.config:
+        try:
+            with open(args.config, "r", encoding="utf-8-sig") as f:
+                overrides = load_settings(f.read())
+        except OSError as e:
+            fail("cannot read %s: %s" % (args.config, e))
+        except ValueError as e:
+            fail("%s: %s" % (args.config, e))
+    apply_settings(overrides)
     text = DEMO_SACCT if args.demo else read_input(args)
     try:
         result = analyze(text)
     except ValueError as e:
         fail(str(e))
+    if overrides:
+        result["settings"] = overrides
 
     if args.anonymise:
         result = anonymise(result)

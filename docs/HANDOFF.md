@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.36, **846 tests, all passing** (4 skip by design) |
+| Version | v0.37, **863 tests, all passing** (4 skip by design) |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -85,6 +85,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.34 | Data quality: summary `data_quality` (jobs with usable CPU, memory, time figures); report line "Usable figures: CPU x%, memory y%, time z% of jobs" before the notes; note "Memory figures are missing for N of M jobs: memory advice is low confidence." when under half have them (`MEMORY_CONFIDENCE_SHARE`), unless a missing-column note already says so. Spec `tests/test_data_quality_line.py`. Built by Qwen first try |
 | v0.35 | Typical-job advice uses only runs that measured the figure: CPU, memory and time advice each need >= 3 measured runs, and "Across N runs" cites that measured count (before: all runs, even if only one had MaxRSS); profiles gain `measured`. Spec `tests/test_profile_evidence.py`. Built by Qwen first try |
 | v0.36 | Job outcomes: `analysis.summarize_outcomes` -> summary `outcomes` (completed, failed, cancelled, out of memory, timed out, ended by system, other) and `top_exit_codes` (top 3 non-zero exit codes of FAILED jobs); report lines "Job outcomes:" and "Failed exit codes:"; `exit_code` per job; export command now asks for `...,State,ExitCode,Submit,...`. Spec `tests/test_outcomes.py`. Built by Qwen first try |
+| v0.37 | Centre settings: `--config FILE` (key = value lines) sets `min_runs` (typical-job advice), `memory_margin` (per-job and array --mem advice, default 1.25) and `memory_confidence_share` (default 0.5); `analysis.load_settings` / `apply_settings` / `SETTINGS`; report line "Centre settings:" lists overrides. Per-user reports from `--split-by-user` use the settings but do not print the line. Spec `tests/test_settings.py`. Qwen's code was right on attempt 1; both attempts were marked failed only by the 20k-job speed test (see section 9 note) |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -128,6 +129,9 @@ Kept outside this public repository.
 
 ## 9. Next build queue (planned 27 Nov 2026)
 
+**Overnight summary (27 Nov 2026, 02:00-04:00):** v0.30-v0.37 built, each from an architect spec test, Qwen as builder, gated commit. Real bugs fixed: system-ended jobs counted as user waste (v0.31); requeued attempts leaking memory/OOM into the final verdict (v0.32); typical-job advice sized from too few measured runs (v0.35). **Speed note:** from about 03:00 the 20k-job speed test (`tests/test_performance.py`, limit 1.0 s) ran at ~1.22 s for every version tonight, including ones that passed at 1 s earlier, with High performance power plan, 3.6 GHz, low load and the Qwen model unloaded. Likely Windows putting background work on the E-cores while nobody is at the PC; not a code regression (v0.36 -> v0.37 adds < 0.02 s). Re-run the suite with the PC in use before changing that test. Only MPI memory (blocked on Kelvin2) remains in the queue.
+
+
 Architect writes the spec test, Qwen builds via `tools/qwen/qwen-task.sh`, one small task per version. Ranked by trust for HPC support teams (ChatGPT and Gemini, asked separately, both put trust/correctness ahead of new metrics).
 
 | Next | Build | Why / evidence |
@@ -138,5 +142,5 @@ Architect writes the spec test, Qwen builds via `tools/qwen/qwen-task.sh`, one s
 | ~~v0.34~~ done | **Data-quality line:** share of jobs with usable CPU, memory and time figures; memory advice marked "low confidence" when MaxRSS is missing for most jobs. | Missing must never read as zero. |
 | ~~v0.35~~ done | **Evidence on typical-job advice:** "from N runs, p95 memory X GB, requested Y GB". | Support staff need to justify each change to a researcher. |
 | ~~v0.36~~ done | **Failure breakdown:** count of FAILED / CANCELLED / OUT_OF_MEMORY / TIMEOUT / system-ended jobs, with the most common non-zero exit codes for FAILED (ExitCode column, added to the export command), in the summary and report. | Support staff triage failed jobs first. |
-| v0.37 | **Centre settings file** (`--config FILE`, simple key = value): memory safety margin, min runs for typical-job advice, low-confidence share; active settings printed in the report. | Centres differ; defaults stay as now. |
+| ~~v0.37~~ done | **Centre settings file** (`--config FILE`, simple key = value): memory safety margin, min runs for typical-job advice, low-confidence share; active settings printed in the report. | Centres differ; defaults stay as now. |
 | blocked | **MPI memory** (MaxRSSTask / TRESUsageInTot; never sum per-task peaks). | Needs a real MPI job on Kelvin2. |

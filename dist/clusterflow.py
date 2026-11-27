@@ -61,6 +61,39 @@ SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
 SYSTEM_END_STATES = ("PREEMPTED", "NODE_FAIL", "BOOT_FAIL")
 # Below this share of jobs with memory figures, memory advice is low confidence
 MEMORY_CONFIDENCE_SHARE = 0.5
+# Centre settings (v0.37): the engine reads SETTINGS; the CLI's --config FILE can override the defaults
+DEFAULT_SETTINGS = {"min_runs": 3, "memory_margin": 1.25, "memory_confidence_share": MEMORY_CONFIDENCE_SHARE}
+SETTINGS = dict(DEFAULT_SETTINGS)
+
+
+def load_settings(text):
+    """Parse 'key = value' lines (# comments and blank lines ignored) into a dict of known settings; ValueError if bad."""
+    out = {}
+    for n, line in enumerate(text.splitlines(), 1):
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if "=" not in line:
+            raise ValueError("line %d: expected key = value" % n)
+        key, value = [p.strip() for p in line.split("=", 1)]
+        if key not in DEFAULT_SETTINGS:
+            raise ValueError("line %d: unknown setting '%s' (known: %s)" % (n, key, ", ".join(sorted(DEFAULT_SETTINGS))))
+        try:
+            v = int(value) if key == "min_runs" else float(value)
+        except ValueError:
+            raise ValueError("line %d: '%s' needs a number" % (n, key))
+        if ((key == "min_runs" and v < 1) or (key == "memory_margin" and v < 1)
+                or (key == "memory_confidence_share" and not 0 <= v <= 1)):
+            raise ValueError("line %d: '%s' is out of range" % (n, key))
+        out[key] = v
+    return out
+
+
+def apply_settings(overrides):
+    """Reset SETTINGS to the defaults, then apply the overrides (a dict from load_settings)."""
+    SETTINGS.clear()
+    SETTINGS.update(DEFAULT_SETTINGS)
+    SETTINGS.update(overrides)
 
 
 def _finite(x):
@@ -407,10 +440,12 @@ def _slurm_time(seconds):
     return ("%d-%s" % (days, _hms(rest))) if days else _hms(rest)
 
 
-def summarize_profiles(results, min_runs=3):
+def summarize_profiles(results, min_runs=None):
     """Advice per (user, job name) from >= min_runs COMPLETED runs, sized to near-worst runs:
     p90 busy cores x 1.2, p95 peak memory x 1.2, p95 run time x 1.5 (rounded up to 15 min).
     Compared with the median request. Sorted by wasted core-hours (desc), then user, name."""
+    if min_runs is None:
+        min_runs = SETTINGS["min_runs"]
     groups = {}
     oom_keys, timeout_keys = set(), set()
     for j in results:
@@ -636,7 +671,7 @@ def analyze_job(job):
         recommendations.append(f"CPU efficiency is {cpu_efficiency:.1f}%: request --cpus-per-task={new_cpus} instead of {alloc_cpus}, or check the code really runs in parallel.")
     
     if completed and memory_efficiency is not None and memory_efficiency < 50:
-        new_mem = ceil(max_rss_mb * 1.25) if max_rss_mb is not None else None
+        new_mem = ceil(max_rss_mb * SETTINGS["memory_margin"]) if max_rss_mb is not None else None
         if new_mem is not None and req_mem_mb - new_mem >= 1024:
             recommendations.append(f"Memory efficiency is {memory_efficiency:.1f}%: request --mem={new_mem}M instead.")
     
@@ -884,8 +919,8 @@ def summarize_arrays(results):
         if avg_cpu is not None and avg_cpu < 50 and cpus > 1:
             new_cpus = max(1, ceil(cpus * avg_cpu / 100 * 1.2))
             recs.append("Average CPU efficiency over %d tasks is %.1f%%: request --cpus-per-task=%d instead of %d." % (nd, avg_cpu, new_cpus, cpus))
-        if not oom and peak is not None and req_mb is not None and req_mb - ceil(peak * 1.25) >= 1024:
-            recs.append("Peak memory over %d tasks is %dM of %dM requested: request --mem=%dM for this array." % (nd, round(peak), round(req_mb), ceil(peak * 1.25)))
+        if not oom and peak is not None and req_mb is not None and req_mb - ceil(peak * SETTINGS["memory_margin"]) >= 1024:
+            recs.append("Peak memory over %d tasks is %dM of %dM requested: request --mem=%dM for this array." % (nd, round(peak), round(req_mb), ceil(peak * SETTINGS["memory_margin"])))
         if not timeouts:
             pairs = [(t["elapsed_s"], t["time_used"]) for t in done if t["elapsed_s"] and t["time_used"] is not None]
             if pairs:
@@ -927,7 +962,7 @@ def _memory_confidence_warning(jobs, column_warnings):
     """Note when memory figures exist for too few jobs (unless a missing-column note already says why)."""
     n = len(jobs)
     have = sum(1 for j in jobs if j["memory_efficiency"] is not None)
-    if not n or have >= MEMORY_CONFIDENCE_SHARE * n:
+    if not n or have >= SETTINGS["memory_confidence_share"] * n:
         return []
     if any(w.startswith("MaxRSS column missing") or w.startswith("ReqMem column missing") for w in column_warnings):
         return []
@@ -1191,7 +1226,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.36"
+VERSION = "0.37"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -1327,6 +1362,9 @@ def report(result, top):
         if cost["idle_gpu_cost"] is not None:
             lines.append("Cost of idle GPU time:    %s (at %s per GPU-hour)"
                          % (_money(cur, cost["idle_gpu_cost"]), _rate(cur, cost["gpu_rate"])))
+    if result.get("settings"):
+        lines.append("Centre settings:       " + ", ".join("%s=%s" % (k, result["settings"][k])
+                                                       for k in sorted(result["settings"])))
     oc = summary.get("outcomes")
     if oc and oc["completed"] < summary["job_count"]:
         parts = [(oc[k], label) for k, label in (("completed", "completed"), ("failed", "failed"),
@@ -1709,6 +1747,8 @@ def main(argv=None):
     parser.add_argument("--gpu-hour-cost", type=float, default=None, metavar="RATE",
                          help="your centre's price per GPU-hour, to show what idle GPU time costs")
     parser.add_argument("--currency", default="£", metavar="SYMBOL", help="currency symbol for costs (default: £)")
+    parser.add_argument("--config", metavar="FILE",
+                        help="centre settings file (key = value lines): min_runs, memory_margin, memory_confidence_share")
     parser.add_argument("--demo", action="store_true", help="analyse a built-in sample (made-up data) to see what the report looks like")
 
     args = parser.parse_args(argv)
@@ -1717,11 +1757,23 @@ def main(argv=None):
         fail("--split-by-user writes each user's own report: it cannot be combined with --anonymise")
     if args.demo and (args.file is not None or args.days is not None):
         fail("--demo uses built-in sample data: do not also give a file or --days")
+    overrides = {}
+    if args.config:
+        try:
+            with open(args.config, "r", encoding="utf-8-sig") as f:
+                overrides = load_settings(f.read())
+        except OSError as e:
+            fail("cannot read %s: %s" % (args.config, e))
+        except ValueError as e:
+            fail("%s: %s" % (args.config, e))
+    apply_settings(overrides)
     text = DEMO_SACCT if args.demo else read_input(args)
     try:
         result = analyze(text)
     except ValueError as e:
         fail(str(e))
+    if overrides:
+        result["settings"] = overrides
 
     if args.anonymise:
         result = anonymise(result)
