@@ -66,7 +66,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.32"
+VERSION = "0.33"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -184,6 +184,10 @@ def report(result, top):
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
         lines.append("Max queue wait:        %s" % fmt_wait(summary["max_wait_s"]))
+        if summary.get("wait_from") == "Eligible":
+            lines.append("Queue wait from:      eligible time (holds and dependencies not counted)")
+        else:
+            lines.append("Queue wait from:      submit time (export Eligible to leave out holds and dependencies)")
     if summary.get("gpu_job_count"):
         lines.append("GPU jobs:              %s" % num(summary["gpu_job_count"], 0))
         lines.append("GPU-hours:             %s" % ("-" if summary["total_gpu_hours"] is None

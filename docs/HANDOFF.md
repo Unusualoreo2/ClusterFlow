@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.32, **819 tests, all passing** (4 skip by design) |
+| Version | v0.33, **827 tests, all passing** (4 skip by design) |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -42,6 +42,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 - **Qwen limits:** its context is 32k tokens, so tell it exactly which lines to read and give ready-made code blocks; keep task files outside the repo (the scratchpad), not in `tools/`.
 - **Qwen's second attempt starts from a rollback:** if attempt 1 got close, review its diff before letting attempt 2 run; attempt 2 may rewrite good code. Changing `from analysis import ...` in the CLI needs `scripts/build_bundle.py` to keep stripping it.
 
+- **Qwen may write scratch scripts:** it once rewrote the root `debug_test.py`, which pytest collects, breaking every test run; `qwen-task.sh` rollback now restores it. Check `git status` for stray files after each run.
 - **Qwen tips learned:** give exact `replace_text` snippets with unique anchors; for doc edits, make the new text end with the original heading (Qwen tends to delete headings); always review its diff (it sometimes invents field names, duplicates code or picks a simpler design); keep each task small.
 
 ## 4. What was built (25 Nov 2026, chronological)
@@ -80,6 +81,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.30 | Web page's "Download CSV" adds the same raw figures as `--csv` (CPUs, memory requested/used MB, elapsed, time limit, queue wait, GPUs, GPU-hours); spec `tests/test_web_csv_raw.py` runs the page's own CSV code in Node. Built by Qwen first try |
 | v0.31 | Jobs the system ended (`PREEMPTED`, `NODE_FAIL`, `BOOT_FAIL`, `analysis.SYSTEM_END_STATES`) keep their measured efficiencies but count 0 wasted core-hours, get no advice, no idle GPU-hours, and stay out of What to fix first; `system_ended` flag per job, `system_ended_count` in the summary, one note line (CLI, HTML, web). Spec `tests/test_system_ended.py`. Built by Qwen first try |
 | v0.32 | Requeued jobs: when a JobID's parent row appears again, `merge_steps` starts a new attempt and keeps only the last one with its own steps (before, an earlier attempt's MaxRSS or OUT_OF_MEMORY step leaked into the final verdict). `attempts` per job, `requeued_count` in the summary, one note line. A job pasted twice from overlapping exports also counts as "listed more than once" (the note says so). Spec `tests/test_requeued.py`. Built by Qwen first try (architect fixed one indent) |
+| v0.33 | Queue wait from `Eligible` when valid and not after Start, else `Submit` (holds and dependencies are not the scheduler's doing); `wait_from` per job and in the summary; report line "Queue wait from:"; export command everywhere now asks for `...,Submit,Eligible,Start,...`. Spec `tests/test_wait_eligible.py`. Qwen's code was right but both attempts failed because it rewrote the tracked root `debug_test.py` (pytest collects it); the rollback now restores that file too |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -129,7 +131,7 @@ Architect writes the spec test, Qwen builds via `tools/qwen/qwen-task.sh`, one s
 |---|---|---|
 | ~~v0.31~~ done | **System-ended jobs are not the user's waste.** `PREEMPTED`, `NODE_FAIL`, `BOOT_FAIL` jobs: no wasted core-hours, no advice, left out of "What to fix first"; counted on their own line ("N jobs ended by the system"). | Probe 27 Nov: a PREEMPTED and a NODE_FAIL job each showed 3.8 wasted core-hours against the researcher. |
 | ~~v0.32~~ done | **Requeued jobs:** the same JobID on several rows (requeue history) is kept once (last attempt) with a note "N jobs were requeued"; typical-job advice must not count attempts as separate runs. | Probe: duplicate JobID 13 collapsed silently. |
-| v0.33 | **Queue wait from `Eligible`** when the column is present (falls back to `Submit`); report says which was used. | Holds and dependencies inflate Submit-to-Start waits. |
+| ~~v0.33~~ done | **Queue wait from `Eligible`** when the column is present (falls back to `Submit`); report says which was used. | Holds and dependencies inflate Submit-to-Start waits. |
 | v0.34 | **Data-quality line:** share of jobs with usable CPU, memory and time figures; memory advice marked "low confidence" when MaxRSS is missing for most jobs. | Missing must never read as zero. |
 | v0.35 | **Evidence on typical-job advice:** "from N runs, p95 memory X GB, requested Y GB". | Support staff need to justify each change to a researcher. |
 | later | Centre config file (thresholds, safety margins, min runs); failure breakdown by exit code. | |

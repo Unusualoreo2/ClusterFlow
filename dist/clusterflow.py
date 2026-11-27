@@ -13,7 +13,7 @@ from math import ceil
 EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,"
                   "Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt")
 
-KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Start", "End", "Elapsed",
+KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Eligible", "Start", "End", "Elapsed",
                   "ElapsedRaw", "Timelimit", "AllocCPUS", "NCPUS", "TotalCPU", "CPUTime", "CPUTimeRAW", "ReqMem",
                   "MaxRSS", "AllocTRES", "ReqTRES", "ExitCode", "Account", "NNodes", "AllocNodes",
                   "TRESUsageInAve", "TRESUsageInTot", "AllocMem", "AllocGPUs")
@@ -575,6 +575,7 @@ def analyze_job(job):
     submit_str = job.get("Submit", "")
     start_str = job.get("Start", "")
     wait_s = None
+    wait_from = None
     if submit_str and start_str and submit_str != "Unknown" and start_str != "None":
         submit_dt = parse_timestamp(submit_str)
         start_dt = parse_timestamp(start_str)
@@ -583,6 +584,15 @@ def analyze_job(job):
             diff = (start_dt - submit_dt).total_seconds()
             if diff >= 0:
                 wait_s = diff
+                wait_from = "Submit"
+    # Eligible leaves out time the job was held or waiting on a dependency: use it when it is valid
+    eligible_str = job.get("Eligible", "")
+    if eligible_str and eligible_str != "Unknown" and start_str and start_str not in ("None", "Unknown"):
+        eligible_dt = parse_timestamp(eligible_str)
+        start_dt = parse_timestamp(start_str)
+        if eligible_dt and start_dt and (start_dt - eligible_dt).total_seconds() >= 0:
+            wait_s = (start_dt - eligible_dt).total_seconds()
+            wait_from = "Eligible"
 
     # Generate recommendations
     
@@ -662,6 +672,7 @@ def analyze_job(job):
         "time_used": time_used,
         "wasted_core_hours": wasted_core_hours,
         "wait_s": wait_s,
+        "wait_from": wait_from,
         "timelimit_s": timelimit_s,
         "array_id": job_id.split(".")[0].split("_")[0] if "_" in job_id.split(".")[0] else None,
         "max_rss_mb": max_rss_mb,
@@ -1056,6 +1067,8 @@ def _summarise(rows, jobs):
             "total_wasted_core_hours": total_wasted_core_hours,
             "avg_wait_s": avg_wait_s,
             "max_wait_s": max_wait_s,
+            "wait_from": ("Eligible" if any(j["wait_from"] == "Eligible" for j in analyzed_jobs)
+                          else "Submit" if waits else None),
             "gpu_job_count": len(gpu_jobs),
             "total_gpu_hours": total_gpu_hours,
             "avg_gpu_utilization": avg_gpu_utilization,
@@ -1134,7 +1147,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.32"
+VERSION = "0.33"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -1252,6 +1265,10 @@ def report(result, top):
     if summary.get("avg_wait_s") is not None:
         lines.append("Avg queue wait:        %s" % fmt_wait(summary["avg_wait_s"]))
         lines.append("Max queue wait:        %s" % fmt_wait(summary["max_wait_s"]))
+        if summary.get("wait_from") == "Eligible":
+            lines.append("Queue wait from:      eligible time (holds and dependencies not counted)")
+        else:
+            lines.append("Queue wait from:      submit time (export Eligible to leave out holds and dependencies)")
     if summary.get("gpu_job_count"):
         lines.append("GPU jobs:              %s" % num(summary["gpu_job_count"], 0))
         lines.append("GPU-hours:             %s" % ("-" if summary["total_gpu_hours"] is None

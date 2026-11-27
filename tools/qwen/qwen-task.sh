@@ -19,7 +19,7 @@ verify() {
   return 0
 }
 rollback() {
-  (cd "$PROJ" && git checkout -q -- backend frontend scripts docs README.md Dockerfile 2>/dev/null
+  (cd "$PROJ" && git checkout -q -- backend frontend scripts docs README.md Dockerfile debug_test.py 2>/dev/null
    git clean -fdq -- backend frontend scripts docs 2>/dev/null
    git ls-files --others --exclude-standard | grep -vE "^(tests|data)/" | xargs -r rm -f)
   echo "=== rolled back Qwen's edits"
