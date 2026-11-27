@@ -55,6 +55,8 @@ def _reject_fixed_width(lines):
 SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
 # The cluster, not the researcher, ended these jobs: their lost time is not the user's waste
 SYSTEM_END_STATES = ("PREEMPTED", "NODE_FAIL", "BOOT_FAIL")
+# Below this share of jobs with memory figures, memory advice is low confidence
+MEMORY_CONFIDENCE_SHARE = 0.5
 
 
 def _finite(x):
@@ -895,6 +897,17 @@ def summarize_arrays(results):
     return entries
 
 
+def _memory_confidence_warning(jobs, column_warnings):
+    """Note when memory figures exist for too few jobs (unless a missing-column note already says why)."""
+    n = len(jobs)
+    have = sum(1 for j in jobs if j["memory_efficiency"] is not None)
+    if not n or have >= MEMORY_CONFIDENCE_SHARE * n:
+        return []
+    if any(w.startswith("MaxRSS column missing") or w.startswith("ReqMem column missing") for w in column_warnings):
+        return []
+    return ["Memory figures are missing for %d of %d jobs: memory advice is low confidence." % (n - have, n)]
+
+
 def _requeued_warning(jobs):
     """Note about jobs listed more than once (requeued); only their last attempt is analysed."""
     n = sum(1 for j in jobs if j["attempts"] > 1)
@@ -1050,7 +1063,7 @@ def _summarise(rows, jobs):
     return {
         "jobs": analyzed_jobs,
         "skipped": skipped,
-        "warnings": _column_warnings(headers) + (
+        "warnings": _column_warnings(headers) + _memory_confidence_warning(analyzed_jobs, _column_warnings(headers)) + (
             ["TRESUsageInAve column missing: GPU utilisation is not available."]
             if gpu_jobs and "TRESUsageInAve" not in headers else []) + _artefact_warning(filtered_jobs)
             + _system_ended_warning(analyzed_jobs) + _requeued_warning(analyzed_jobs),
@@ -1058,6 +1071,12 @@ def _summarise(rows, jobs):
             "job_count": job_count,
             "system_ended_count": sum(1 for j in analyzed_jobs if j["system_ended"]),
             "requeued_count": sum(1 for j in analyzed_jobs if j["attempts"] > 1),
+            "data_quality": {
+                "jobs": job_count,
+                "cpu": sum(1 for j in analyzed_jobs if j["cpu_efficiency"] is not None),
+                "memory": sum(1 for j in analyzed_jobs if j["memory_efficiency"] is not None),
+                "time": sum(1 for j in analyzed_jobs if j["time_used"] is not None),
+            },
             "avg_cpu_efficiency": avg_cpu_efficiency,
             "avg_memory_efficiency": avg_memory_efficiency,
             "total_wasted_core_hours": total_wasted_core_hours,
