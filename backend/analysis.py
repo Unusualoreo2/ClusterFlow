@@ -298,11 +298,19 @@ def merge_steps(rows):
     """
     # Group by base JobID (before first ".")
     job_groups = {}
+    attempts = {}       # base JobID -> times the job was listed (a requeued job appears again)
+    has_parent = set()  # base JobIDs whose current attempt already has its parent row
     for row in rows:
         job_id = row["JobID"]
         # Split on "." to get base job ID
         base_job_id = job_id.split(".", 1)[0]
         
+        if "." not in job_id:
+            if base_job_id in has_parent:
+                # Requeued: the same JobID starts again. Keep only the latest attempt and its own steps.
+                job_groups[base_job_id] = []
+                attempts[base_job_id] = attempts.get(base_job_id, 1) + 1
+            has_parent.add(base_job_id)
         if base_job_id not in job_groups:
             job_groups[base_job_id] = []
         job_groups[base_job_id].append(row)
@@ -353,6 +361,7 @@ def merge_steps(rows):
         if not merged_job.get("State", "").startswith("COMPLETED") and any(
                 r.get("State", "").startswith("OUT_OF_MEMORY") for r in step_rows):
             merged_job["State"] = "OUT_OF_MEMORY"
+        merged_job["_attempts"] = attempts.get(base_job_id, 1)
         merged_jobs.append(merged_job)
     
     return merged_jobs
@@ -659,6 +668,7 @@ def analyze_job(job):
         "start_date": _start_date(job),
         "recommendations": recommendations,
         "system_ended": system_ended,
+        "attempts": int(job.get("_attempts") or 1),
         "user": job.get("User", "") or "",
         "partition": job.get("Partition", "") or ""
     }
@@ -874,6 +884,16 @@ def summarize_arrays(results):
     return entries
 
 
+def _requeued_warning(jobs):
+    """Note about jobs listed more than once (requeued); only their last attempt is analysed."""
+    n = sum(1 for j in jobs if j["attempts"] > 1)
+    if not n:
+        return []
+    if n == 1:
+        return ["1 job was requeued (listed more than once): only its last attempt is analysed."]
+    return ["%d jobs were requeued (listed more than once): only their last attempt is analysed." % n]
+
+
 def _system_ended_warning(jobs):
     """Note about jobs the cluster ended (preempted, node or boot failure); they are not counted as waste."""
     n = sum(1 for j in jobs if j["system_ended"])
@@ -1022,10 +1042,11 @@ def _summarise(rows, jobs):
         "warnings": _column_warnings(headers) + (
             ["TRESUsageInAve column missing: GPU utilisation is not available."]
             if gpu_jobs and "TRESUsageInAve" not in headers else []) + _artefact_warning(filtered_jobs)
-            + _system_ended_warning(analyzed_jobs),
+            + _system_ended_warning(analyzed_jobs) + _requeued_warning(analyzed_jobs),
         "summary": {
             "job_count": job_count,
             "system_ended_count": sum(1 for j in analyzed_jobs if j["system_ended"]),
+            "requeued_count": sum(1 for j in analyzed_jobs if j["attempts"] > 1),
             "avg_cpu_efficiency": avg_cpu_efficiency,
             "avg_memory_efficiency": avg_memory_efficiency,
             "total_wasted_core_hours": total_wasted_core_hours,
