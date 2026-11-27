@@ -16,7 +16,7 @@ from analysis import analyze_by_user
 
 def sacct_command(days, all_users=False):
     cmd = ["sacct", "-P", "--units=M", "-S", "now-%ddays" % days,
-            "--format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve"]
+            "--format=JobID,JobName,User,Partition,State,ExitCode,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve"]
     if all_users:
         cmd.append("-a")
     return cmd

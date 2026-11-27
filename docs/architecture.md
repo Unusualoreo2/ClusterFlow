@@ -20,7 +20,7 @@ ClusterFlow v0.2 is a **Slurm job efficiency analyser**. It answers the question
 The user exports their jobs with:
 
 ```
-sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt
+sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,ExitCode,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt
 ```
 
 `-P` gives `|`-separated output. Comma-separated files (`--delimiter=,`) are also accepted. The delimiter is detected from the header line.

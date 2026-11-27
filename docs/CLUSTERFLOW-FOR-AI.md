@@ -60,7 +60,7 @@ sacct text --read_sacct--> rows (dicts, canonical column names)
 - The CLI then formats the result: `report()` (text), `html_report()`, `write_csv()`, or JSON.
 
 Input format: `|`, comma or tab separated, column names in any case. The recommended export:
-`sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve`
+`sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,ExitCode,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve`
 (No `-X`: memory peaks are recorded on the job steps.)
 Jobs that are RUNNING, PENDING, REQUEUED, SUSPENDED or RESIZING are skipped and counted.
 
