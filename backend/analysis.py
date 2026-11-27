@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timedelta
 from math import ceil
 
-EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,"
+EXPORT_COMMAND = ("sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,"
                   "Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt")
 
 KNOWN_COLUMNS = ("JobID", "JobName", "User", "Partition", "State", "Submit", "Start", "End", "Elapsed",

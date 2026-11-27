@@ -335,7 +335,7 @@
 
     <div class="box command-box">
         <h2>Export your jobs</h2>
-        <pre>sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt</pre>
+        <pre>sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt</pre>
         <button class="copy-btn">Copy</button>
     </div>
 
@@ -440,7 +440,7 @@
 
         // Copy command to clipboard
         copyBtn.addEventListener('click', function () {
-            const command = 'sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt';
+            const command = 'sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt';
             navigator.clipboard.writeText(command).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = 'Copied';

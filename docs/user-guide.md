@@ -6,7 +6,7 @@ As an HPC user, you can improve your job efficiency by analyzing sacct exports.
 
 Run this command to export your jobs:
 ```
-sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt
+sacct -P --units=M -S now-7days --format=JobID,JobName,User,Partition,State,Submit,Eligible,Start,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem,MaxRSS,AllocTRES,TRESUsageInAve > jobs.txt
 ```
 
 Do not add `-X`: memory usage is recorded on the job steps, and ClusterFlow merges them into each job automatically. Change `now-7days` to cover a different period.
