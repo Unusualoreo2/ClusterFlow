@@ -53,6 +53,8 @@ def _reject_fixed_width(lines):
                          "reliably. Re-export with: " + EXPORT_COMMAND)
 
 SKIP_STATES = ("RUNNING", "PENDING", "REQUEUED", "SUSPENDED", "RESIZING")
+# The cluster, not the researcher, ended these jobs: their lost time is not the user's waste
+SYSTEM_END_STATES = ("PREEMPTED", "NODE_FAIL", "BOOT_FAIL")
 
 
 def _finite(x):
@@ -629,6 +631,13 @@ def analyze_job(job):
         
         recommendations.append(f"Only {time_used:.1f}% of the time limit was used: request --time={new_limit_str} instead.")
     
+    system_ended = state.startswith(SYSTEM_END_STATES)
+    if system_ended:
+        # Preemption, node or boot failure: not the user's waste, nothing to advise
+        recommendations = []
+        if wasted_core_hours is not None:
+            wasted_core_hours = 0.0
+
     return {
         "job_id": job_id,
         "name": name,
@@ -649,6 +658,7 @@ def analyze_job(job):
         "gpu_utilization": gpu_util,
         "start_date": _start_date(job),
         "recommendations": recommendations,
+        "system_ended": system_ended,
         "user": job.get("User", "") or "",
         "partition": job.get("Partition", "") or ""
     }
@@ -864,6 +874,15 @@ def summarize_arrays(results):
     return entries
 
 
+def _system_ended_warning(jobs):
+    """Note about jobs the cluster ended (preempted, node or boot failure); they are not counted as waste."""
+    n = sum(1 for j in jobs if j["system_ended"])
+    if not n:
+        return []
+    return ["%d %s ended by the system (preempted, node failure or boot failure): not counted as waste."
+            % (n, "job" if n == 1 else "jobs")]
+
+
 def _artefact_warning(jobs):
     """Note about jobs whose CPU time exceeded their allocation (their CPU efficiency is ignored)."""
     n = sum(1 for j in jobs if j.get("_cpu_artefact"))
@@ -975,7 +994,7 @@ def _summarise(rows, jobs):
     total_gpu_hours = sum(gpu_hours) if gpu_hours else None
     avg_gpu_utilization = sum(gpu_utils) / len(gpu_utils) if gpu_utils else None
     idle = [j["gpu_hours"] * (1 - j["gpu_utilization"] / 100) for j in gpu_jobs
-            if j["gpu_hours"] is not None and j["gpu_utilization"] is not None]
+            if j["gpu_hours"] is not None and j["gpu_utilization"] is not None and not j["system_ended"]]
     idle_gpu_hours = sum(idle) if idle else None
 
     waits = [j["wait_s"] for j in analyzed_jobs if j["wait_s"] is not None]
@@ -1002,9 +1021,11 @@ def _summarise(rows, jobs):
         "skipped": skipped,
         "warnings": _column_warnings(headers) + (
             ["TRESUsageInAve column missing: GPU utilisation is not available."]
-            if gpu_jobs and "TRESUsageInAve" not in headers else []) + _artefact_warning(filtered_jobs),
+            if gpu_jobs and "TRESUsageInAve" not in headers else []) + _artefact_warning(filtered_jobs)
+            + _system_ended_warning(analyzed_jobs),
         "summary": {
             "job_count": job_count,
+            "system_ended_count": sum(1 for j in analyzed_jobs if j["system_ended"]),
             "avg_cpu_efficiency": avg_cpu_efficiency,
             "avg_memory_efficiency": avg_memory_efficiency,
             "total_wasted_core_hours": total_wasted_core_hours,

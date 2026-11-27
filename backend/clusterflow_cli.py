@@ -66,7 +66,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.30"
+VERSION = "0.31"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),

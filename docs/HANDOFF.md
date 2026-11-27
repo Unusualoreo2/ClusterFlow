@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.30, **802 tests, all passing** (4 skip by design) |
+| Version | v0.31, **811 tests, all passing** (4 skip by design) |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -78,6 +78,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.28 | `--split-by-user` also writes index.html (all users by waste, linked); VERSION fixed (was stuck at 0.19) and now tested against this file's Version line: bump both on every release |
 | v0.29 | `--csv` adds raw figures at the end (alloc CPUs, memory requested/used MB, elapsed, time limit, queue wait in seconds, GPUs, GPU-hours); text cells starting `= + - @` get a leading `'` (CSV formula injection, as the web CSV already did). Built on branch `feat/csv-raw-figures` |
 | v0.30 | Web page's "Download CSV" adds the same raw figures as `--csv` (CPUs, memory requested/used MB, elapsed, time limit, queue wait, GPUs, GPU-hours); spec `tests/test_web_csv_raw.py` runs the page's own CSV code in Node. Built by Qwen first try |
+| v0.31 | Jobs the system ended (`PREEMPTED`, `NODE_FAIL`, `BOOT_FAIL`, `analysis.SYSTEM_END_STATES`) keep their measured efficiencies but count 0 wasted core-hours, get no advice, no idle GPU-hours, and stay out of What to fix first; `system_ended` flag per job, `system_ended_count` in the summary, one note line (CLI, HTML, web). Spec `tests/test_system_ended.py`. Built by Qwen first try |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -125,7 +126,7 @@ Architect writes the spec test, Qwen builds via `tools/qwen/qwen-task.sh`, one s
 
 | Next | Build | Why / evidence |
 |---|---|---|
-| v0.31 | **System-ended jobs are not the user's waste.** `PREEMPTED`, `NODE_FAIL`, `BOOT_FAIL` jobs: no wasted core-hours, no advice, left out of "What to fix first"; counted on their own line ("N jobs ended by the system"). | Probe 27 Nov: a PREEMPTED and a NODE_FAIL job each showed 3.8 wasted core-hours against the researcher. |
+| ~~v0.31~~ done | **System-ended jobs are not the user's waste.** `PREEMPTED`, `NODE_FAIL`, `BOOT_FAIL` jobs: no wasted core-hours, no advice, left out of "What to fix first"; counted on their own line ("N jobs ended by the system"). | Probe 27 Nov: a PREEMPTED and a NODE_FAIL job each showed 3.8 wasted core-hours against the researcher. |
 | v0.32 | **Requeued jobs:** the same JobID on several rows (requeue history) is kept once (last attempt) with a note "N jobs were requeued"; typical-job advice must not count attempts as separate runs. | Probe: duplicate JobID 13 collapsed silently. |
 | v0.33 | **Queue wait from `Eligible`** when the column is present (falls back to `Submit`); report says which was used. | Holds and dependencies inflate Submit-to-Start waits. |
 | v0.34 | **Data-quality line:** share of jobs with usable CPU, memory and time figures; memory advice marked "low confidence" when MaxRSS is missing for most jobs. | Missing must never read as zero. |
