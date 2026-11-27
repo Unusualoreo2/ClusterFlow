@@ -944,8 +944,11 @@
 
             // Download button
             downloadBtn.onclick = function () {
+                const wholeCell = v => (v === null || v === undefined) ? '' : Math.round(v);
                 const csvContent = [
-                    ['Job ID', 'Name', 'State', 'CPU %', 'Memory %', 'Time used %', 'Wasted core-h.', 'Recommendations'],
+                    ['Job ID', 'Name', 'State', 'CPU %', 'Memory %', 'Time used %', 'Wasted core-h.', 'Recommendations',
+                     'CPUs', 'Memory requested (MB)', 'Memory used (MB)', 'Elapsed (s)', 'Time limit (s)', 'Queue wait (s)',
+                     'GPUs', 'GPU-hours'],
                     ...data.jobs.map(job => [
                         job.job_id,
                         job.name,
@@ -954,7 +957,15 @@
                         job.memory_efficiency !== null ? Math.round(job.memory_efficiency) : '',
                         job.time_used !== null ? Math.round(job.time_used) : '',
                         job.wasted_core_hours !== null ? job.wasted_core_hours.toFixed(1) : '',
-                        job.recommendations ? job.recommendations.join(' | ') : ''
+                        job.recommendations ? job.recommendations.join(' | ') : '',
+                        wholeCell(job.alloc_cpus),
+                        wholeCell(job.req_mem_mb),
+                        wholeCell(job.max_rss_mb),
+                        wholeCell(job.elapsed_s),
+                        wholeCell(job.timelimit_s),
+                        wholeCell(job.wait_s),
+                        wholeCell(job.alloc_gpus),
+                        (job.gpu_hours === null || job.gpu_hours === undefined) ? '' : job.gpu_hours.toFixed(1)
                     ])
                 ].map(row => row.map(csvCell).join(',')).join('\r\n');
 
