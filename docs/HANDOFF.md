@@ -26,7 +26,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 
 | Item | State |
 |---|---|
-| Version | v0.34, **834 tests, all passing** (4 skip by design) |
+| Version | v0.35, **838 tests, all passing** (4 skip by design) |
 | Repository | `C:\Users\Owner\Documents\Computer Science\ClusterFlow\MVP` (v0.14-v0.19 were built in the old `HPCFlow\MVP` copy: run `git pull` in ClusterFlow\MVP before using it) |
 | Backup | Private GitHub repo `Unusualoreo2/ClusterFlow`; **every commit auto-pushes** (post-commit hook, log `.git/autopush.log`) |
 | GitHub CLI | Portable build at `%LOCALAPPDATA%\Programs\gh-portable\bin\gh.exe`, signed in as `Unusualoreo2` (Windows admin install not possible) |
@@ -83,6 +83,7 @@ ClusterFlow (renamed from **HPCFlow** on 25 Nov 2026) analyses Slurm job account
 | v0.32 | Requeued jobs: when a JobID's parent row appears again, `merge_steps` starts a new attempt and keeps only the last one with its own steps (before, an earlier attempt's MaxRSS or OUT_OF_MEMORY step leaked into the final verdict). `attempts` per job, `requeued_count` in the summary, one note line. A job pasted twice from overlapping exports also counts as "listed more than once" (the note says so). Spec `tests/test_requeued.py`. Built by Qwen first try (architect fixed one indent) |
 | v0.33 | Queue wait from `Eligible` when valid and not after Start, else `Submit` (holds and dependencies are not the scheduler's doing); `wait_from` per job and in the summary; report line "Queue wait from:"; export command everywhere now asks for `...,Submit,Eligible,Start,...`. Spec `tests/test_wait_eligible.py`. Qwen's code was right but both attempts failed because it rewrote the tracked root `debug_test.py` (pytest collects it); the rollback now restores that file too |
 | v0.34 | Data quality: summary `data_quality` (jobs with usable CPU, memory, time figures); report line "Usable figures: CPU x%, memory y%, time z% of jobs" before the notes; note "Memory figures are missing for N of M jobs: memory advice is low confidence." when under half have them (`MEMORY_CONFIDENCE_SHARE`), unless a missing-column note already says so. Spec `tests/test_data_quality_line.py`. Built by Qwen first try |
+| v0.35 | Typical-job advice uses only runs that measured the figure: CPU, memory and time advice each need >= 3 measured runs, and "Across N runs" cites that measured count (before: all runs, even if only one had MaxRSS); profiles gain `measured`. Spec `tests/test_profile_evidence.py`. Built by Qwen first try |
 
 **Real-data results (IN2P3, Zenodo 18668107, CC-BY 4.0, not stored in the repo):** 69% average CPU efficiency, 33% memory efficiency, 5.07M wasted core-hours, 15,071 out-of-memory jobs in one month.
 
@@ -134,6 +135,7 @@ Architect writes the spec test, Qwen builds via `tools/qwen/qwen-task.sh`, one s
 | ~~v0.32~~ done | **Requeued jobs:** the same JobID on several rows (requeue history) is kept once (last attempt) with a note "N jobs were requeued"; typical-job advice must not count attempts as separate runs. | Probe: duplicate JobID 13 collapsed silently. |
 | ~~v0.33~~ done | **Queue wait from `Eligible`** when the column is present (falls back to `Submit`); report says which was used. | Holds and dependencies inflate Submit-to-Start waits. |
 | ~~v0.34~~ done | **Data-quality line:** share of jobs with usable CPU, memory and time figures; memory advice marked "low confidence" when MaxRSS is missing for most jobs. | Missing must never read as zero. |
-| v0.35 | **Evidence on typical-job advice:** "from N runs, p95 memory X GB, requested Y GB". | Support staff need to justify each change to a researcher. |
-| later | Centre config file (thresholds, safety margins, min runs); failure breakdown by exit code. | |
+| ~~v0.35~~ done | **Evidence on typical-job advice:** "from N runs, p95 memory X GB, requested Y GB". | Support staff need to justify each change to a researcher. |
+| v0.36 | **Failure breakdown:** count of FAILED / CANCELLED / OUT_OF_MEMORY / TIMEOUT / system-ended jobs, with the most common non-zero exit codes for FAILED (ExitCode column, added to the export command), in the summary and report. | Support staff triage failed jobs first. |
+| v0.37 | **Centre settings file** (`--config FILE`, simple key = value): memory safety margin, min runs for typical-job advice, low-confidence share; active settings printed in the report. | Centres differ; defaults stay as now. |
 | blocked | **MPI memory** (MaxRSSTask / TRESUsageInTot; never sum per-task peaks). | Needs a real MPI job on Kelvin2. |

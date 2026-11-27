@@ -433,30 +433,31 @@ def summarize_profiles(results, min_runs=3):
         el = [r["elapsed_s"] for r in runs if r["elapsed_s"]]
         limits = [r["elapsed_s"] / (r["time_used"] / 100.0) for r in runs if r["elapsed_s"] and r["time_used"]]
         cpus_req = percentile([r["alloc_cpus"] for r in runs], 50)
-        p_cores = percentile(cores, 90)
+        p_cores = percentile(cores, 90) if len(cores) >= min_runs else None
         cpus_need = max(1, int(ceil(p_cores * 1.2))) if p_cores is not None else None
-        p_rss = percentile(rss, 95)
+        p_rss = percentile(rss, 95) if len(rss) >= min_runs else None
         mem_need = int(ceil(p_rss * 1.2)) if p_rss is not None else None
         mem_req = percentile(req, 50)
-        p_el = percentile(el, 95)
+        p_el = percentile(el, 95) if len(el) >= min_runs else None
         time_need = int(ceil(p_el * 1.5 / 900.0)) * 900 if p_el is not None else None
         time_req = percentile(limits, 50)
         recs = []
         sbatch = []
         if cpus_need is not None and cpus_req and cpus_need < cpus_req:
             recs.append("Across %d runs, at most %.1f cores were busy in 90%% of runs: request --cpus-per-task=%d "
-                        "instead of %d." % (n, p_cores, cpus_need, cpus_req))
+                        "instead of %d." % (len(cores), p_cores, cpus_need, cpus_req))
             sbatch.append("#SBATCH --cpus-per-task=%d" % cpus_need)
         if (user, name) not in oom_keys and mem_need is not None and mem_req is not None and mem_req - mem_need >= 1024:
             recs.append("Across %d runs, peak memory was at most %dM in 95%% of runs: request --mem=%dM instead of "
-                        "%dM." % (n, round(p_rss), mem_need, round(mem_req)))
+                        "%dM." % (len(rss), round(p_rss), mem_need, round(mem_req)))
             sbatch.append("#SBATCH --mem=%dM" % mem_need)
         if (user, name) not in timeout_keys and time_need is not None and time_req is not None and time_need < 0.5 * time_req:
             recs.append("Across %d runs, 95%% finished within %s: request --time=%s instead of %s."
-                        % (n, _hms(p_el), _slurm_time(time_need), _hms(time_req)))
+                        % (len(el), _hms(p_el), _slurm_time(time_need), _hms(time_req)))
             sbatch.append("#SBATCH --time=%s" % _slurm_time(time_need))
         profiles.append({
             "user": user, "name": name, "runs": n,
+            "measured": {"cpu": len(cores), "memory": len(rss), "time": len(el)},
             "cpus_requested": cpus_req, "cpus_needed": cpus_need,
             "mem_requested_mb": mem_req, "mem_needed_mb": mem_need,
             "time_requested_s": time_req, "time_needed_s": time_need,
@@ -1166,7 +1167,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.34"
+VERSION = "0.35"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
