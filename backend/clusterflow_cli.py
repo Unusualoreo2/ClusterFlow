@@ -66,7 +66,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.35"
+VERSION = "0.36"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -202,6 +202,16 @@ def report(result, top):
         if cost["idle_gpu_cost"] is not None:
             lines.append("Cost of idle GPU time:    %s (at %s per GPU-hour)"
                          % (_money(cur, cost["idle_gpu_cost"]), _rate(cur, cost["gpu_rate"])))
+    oc = summary.get("outcomes")
+    if oc and oc["completed"] < summary["job_count"]:
+        parts = [(oc[k], label) for k, label in (("completed", "completed"), ("failed", "failed"),
+                 ("cancelled", "cancelled"), ("out_of_memory", "out of memory"), ("timeout", "timed out"),
+                 ("system", "ended by system"), ("other", "other"))]
+        lines.append("Job outcomes:          " + ", ".join("%d %s" % (n, label) for n, label in parts if n))
+    codes = summary.get("top_exit_codes")
+    if codes:
+        lines.append("Failed exit codes:     " + ", ".join("%d (%d %s)" % (c, n, "job" if n == 1 else "jobs")
+                                                         for c, n in codes))
     dq = summary.get("data_quality")
     if dq and dq["jobs"]:
         lines.append("Usable figures:        CPU %d%%, memory %d%%, time %d%% of jobs" % (

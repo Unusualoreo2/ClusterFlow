@@ -579,6 +579,8 @@ def analyze_job(job):
     start_str = job.get("Start", "")
     wait_s = None
     wait_from = None
+    exit_str = (job.get("ExitCode") or "").split(":")[0]
+    exit_code = int(exit_str) if exit_str.isdigit() else None
     if submit_str and start_str and submit_str != "Unknown" and start_str != "None":
         submit_dt = parse_timestamp(submit_str)
         start_dt = parse_timestamp(start_str)
@@ -676,6 +678,7 @@ def analyze_job(job):
         "wasted_core_hours": wasted_core_hours,
         "wait_s": wait_s,
         "wait_from": wait_from,
+        "exit_code": exit_code,
         "timelimit_s": timelimit_s,
         "array_id": job_id.split(".")[0].split("_")[0] if "_" in job_id.split(".")[0] else None,
         "max_rss_mb": max_rss_mb,
@@ -902,6 +905,24 @@ def summarize_arrays(results):
     return entries
 
 
+def summarize_outcomes(jobs):
+    """How jobs ended, and the most common non-zero exit codes of FAILED jobs: (outcomes, top_exit_codes)."""
+    outcomes = {"completed": 0, "failed": 0, "cancelled": 0, "out_of_memory": 0, "timeout": 0, "system": 0, "other": 0}
+    codes = {}
+    for j in jobs:
+        first = (j["state"].split() or [""])[0]
+        if j["system_ended"]:
+            outcomes["system"] += 1
+        elif first in ("COMPLETED", "FAILED", "CANCELLED", "OUT_OF_MEMORY", "TIMEOUT"):
+            outcomes[first.lower()] += 1
+        else:
+            outcomes["other"] += 1
+        if first == "FAILED" and j["exit_code"]:
+            codes[j["exit_code"]] = codes.get(j["exit_code"], 0) + 1
+    top = sorted(codes.items(), key=lambda kv: (-kv[1], kv[0]))[:3]
+    return outcomes, [[c, n] for c, n in top]
+
+
 def _memory_confidence_warning(jobs, column_warnings):
     """Note when memory figures exist for too few jobs (unless a missing-column note already says why)."""
     n = len(jobs)
@@ -1065,6 +1086,7 @@ def _summarise(rows, jobs):
     if "Partition" in headers:
         by_partition = summarize_groups(analyzed_jobs, "partition")
     
+    outcomes, top_exit_codes = summarize_outcomes(analyzed_jobs)
     return {
         "jobs": analyzed_jobs,
         "skipped": skipped,
@@ -1082,6 +1104,8 @@ def _summarise(rows, jobs):
                 "memory": sum(1 for j in analyzed_jobs if j["memory_efficiency"] is not None),
                 "time": sum(1 for j in analyzed_jobs if j["time_used"] is not None),
             },
+            "outcomes": outcomes,
+            "top_exit_codes": top_exit_codes,
             "avg_cpu_efficiency": avg_cpu_efficiency,
             "avg_memory_efficiency": avg_memory_efficiency,
             "total_wasted_core_hours": total_wasted_core_hours,
@@ -1167,7 +1191,7 @@ def num(v, decimals=1):
     return "-" if v is None else "{:,.{}f}".format(v, decimals)
 
 
-VERSION = "0.35"
+VERSION = "0.36"
 
 FIX_CATEGORIES = [
     ("request fewer CPUs", lambda r: "--cpus-per-task=" in r),
@@ -1303,6 +1327,16 @@ def report(result, top):
         if cost["idle_gpu_cost"] is not None:
             lines.append("Cost of idle GPU time:    %s (at %s per GPU-hour)"
                          % (_money(cur, cost["idle_gpu_cost"]), _rate(cur, cost["gpu_rate"])))
+    oc = summary.get("outcomes")
+    if oc and oc["completed"] < summary["job_count"]:
+        parts = [(oc[k], label) for k, label in (("completed", "completed"), ("failed", "failed"),
+                 ("cancelled", "cancelled"), ("out_of_memory", "out of memory"), ("timeout", "timed out"),
+                 ("system", "ended by system"), ("other", "other"))]
+        lines.append("Job outcomes:          " + ", ".join("%d %s" % (n, label) for n, label in parts if n))
+    codes = summary.get("top_exit_codes")
+    if codes:
+        lines.append("Failed exit codes:     " + ", ".join("%d (%d %s)" % (c, n, "job" if n == 1 else "jobs")
+                                                         for c, n in codes))
     dq = summary.get("data_quality")
     if dq and dq["jobs"]:
         lines.append("Usable figures:        CPU %d%%, memory %d%%, time %d%% of jobs" % (
